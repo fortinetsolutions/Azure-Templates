@@ -1,6 +1,6 @@
-# AZ-Templates --> Coming Soon!
+# AZ-Templates
 
-Templates for getting you started in Azure with Fortinet.
+Customized Templates for getting you started in Azure with Fortinet solutions that may be slightly beyond the Azure marketplace deployments.
 
 https://www.fortinet.com/azure
 
