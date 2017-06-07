@@ -26,6 +26,17 @@
         "description": "Name for FortiGate virtual appliance."
       }
     },
+    "FortiGateImageSKU": {
+      "type": "string",
+      "defaultValue": "fortinet_fg-vm_payg",
+      "allowedValues": [
+        "fortinet_fg-vm",
+        "fortinet_fg-vm_payg"
+      ],
+      "metadata": {
+        "description": "Identifies whether to to use PAYG (on demand licensing) or BYOL license model (where license is purchased separately)"
+      }
+    },
     "instanceType": {
       "type": "string",
       "defaultValue": "Standard_D2_v2",
@@ -33,35 +44,22 @@
         "description": "Virtual Machine size selection"
       }
     },
-    "StorageAccountName": {
+    "addToExistingAvailabilitySet": {
       "type": "string",
-      "metadata": {
-        "description": "Unique *lowercase* name for the Storage Account where the Virtual Machine's disks will be placed. Note, when deploying a custom template, Azure doesn't check these values for uniqueness."
-      }
-    },
-    "StorageAccountType": {
-      "type": "string",
-      "defaultValue": "Standard_LRS",
-      "metadata": {
-        "description": "Storage Account Type."
-      }
-    },
-    "storageAccountNewOrExisting": {
-      "type": "string",
-      "defaultValue": "new",
+      "defaultValue": "no",
       "allowedValues": [
-        "new",
-        "existing"
+        "no",
+        "yes"
       ],
       "metadata": {
-        "description": "Identifies whether to use new or previously created Storage Account"
+        "description": "Identify whether to use a new or existing availability set. Note: In order to use existing AS, you must deploy in the same, existing, resource group."
       }
     },
-    "storageAcctResourceGroup": {
+    "AvailabilitySetName": {
       "type": "string",
-      "defaultValue": "",
+      "defaultValue":  "fgtAvailabilitySet",
       "metadata": {
-        "description": "Resource Group containing storage account - or new resource group from above (if new storage account)"
+        "description": "Name of availability Set. If new, this must be unique within the resource group."
       }
     },
     "publicIPNewOrExistingOrNone": {
@@ -172,23 +170,6 @@
         "description": "Static IP from subnet 2 for port1 of the FortiGate virtual appliance.  Remember Azure reserves the first 3 IPs in each subnet.  When using an exising vnet, verify that this address is not already assigned, example: 10.2.2.4"
       }
     },
-    "addToExistingAvailabilitySet": {
-      "type": "string",
-      "defaultValue": "no",
-      "allowedValues": [
-        "no",
-        "yes"
-      ],
-      "metadata": {
-        "description": "Identify whether to use a new or existing availability set. Note: In order to use existing AS, you must deploy in the same, existing, resource group."
-      }
-    },
-    "availabilitySetName": {
-      "type": "string",
-      "metadata": {
-        "description": "Name of availability Set. If new, this must be unique within the resource group."
-      }
-    },
     "FortinetTags": {
     "type": "object",
     "defaultValue": {
@@ -197,7 +178,7 @@
     },
     "artifactsBaseUrl": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/fortinetclouddev/FortigateAzureTemplate/5.3.5wAvailSetOption",
+      "defaultValue": "https://raw.githubusercontent.com/fortinetclouddev/FortigateAzureTemplate/5.4.2wAvailSetOption",
       "metadata": {
         "description": "Base URL of the solution template gallery package",
         "artifactsBaseUrl": ""
@@ -205,7 +186,6 @@
     }
   },
   "variables": {
-    "storageAccountType": "[parameters('StorageAccountType')]",
     "vmStorageAccountContainerName": "vhds",
     "vmSize": "[parameters('instanceType')]",
 
@@ -234,15 +214,12 @@
     "network_NIC_fg12_Name": "[concat(parameters('FortiGateName'),'Nic1')]",
     "network_NIC_fg12_Id": "[resourceId('Microsoft.Network/networkInterfaces',variables('network_NIC_fg12_Name'))]",
 
-    "storage_Acct_1_Id": "[resourceId('Microsoft.Storage/storageAccounts',parameters('StorageAccountName'))]",
-
-    "compute_AvailabilitySet_Name": "[parameters('availabilitySetName')]",
-    "compute_AvailabilitySet_FG_Id": "[resourceId('Microsoft.Compute/availabilitySets', variables('compute_AvailabilitySet_Name'))]",
-
-    "storageAccountSetupURL": "[concat(parameters('artifactsBaseUrl'),'/','storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]",
     "publicIPSetupURL": "[concat(parameters('artifactsBaseUrl'),'/','publicip-',parameters('publicIPNewOrExistingOrNone'),'.json')]",
     "virtualNetworkSetupURL": "[concat(parameters('artifactsBaseUrl'),'/','vnet-',parameters('vnetNewOrExisting'),'.json')]",
-    "availabilitySetSetupURL": "[concat(parameters('artifactsBaseUrl'),'/','existingAvailSet-',parameters('addToExistingAvailabilitySet'),'.json')]"
+    "availabilitySetSetupURL": "[concat(parameters('artifactsBaseUrl'),'/','existingAvailSet-',parameters('addToExistingAvailabilitySet'),'.json')]",
+
+    "compute_AvailabilitySet_FG_Name": "[parameters('availabilitySetName')]",
+    "compute_AvailabilitySet_FG_Id": "[resourceId('Microsoft.Compute/availabilitySets', variables('compute_AvailabilitySet_FG_Name'))]"
 
   },
   "resources": [
@@ -261,36 +238,7 @@
             "value": "[parameters('location')]"
           },
           "compute_AvailabilitySet_Name":{
-            "value": "[variables('compute_AvailabilitySet_Name')]"
-          },
-          "FortinetTags": {
-            "value": "[parameters('FortinetTags')]"
-          }
-        }
-      }
-    },
-    {
-      "name": "SettingUpStorageAccount",
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('storageAccountSetupURL')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "storageAccountType": {
-            "value": "[parameters('storageAccountType')]"
-          },
-          "storageAccountName": {
-            "value": "[parameters('StorageAccountName')]"
-          },
-          "storageAccountExistingRG": {
-            "value": "[parameters('storageAcctResourceGroup')]"
+            "value": "[variables('compute_AvailabilitySet_FG_Name')]"
           },
           "FortinetTags": {
             "value": "[parameters('FortinetTags')]"
@@ -303,7 +251,7 @@
       "name": "[variables('routeTable1Name')]",
       "apiVersion": "[variables('apiVer')]",
       "tags": {
-       "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
       "location": "[parameters('location')]",
       "properties": {
@@ -323,7 +271,7 @@
       "type": "Microsoft.Network/routeTables",
       "name": "[variables('routeTable2Name')]",
       "tags": {
-       "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
       "apiVersion": "[variables('apiVer')]",
       "location": "[parameters('location')]",
@@ -340,7 +288,7 @@
           {
             "name": "to-Internet",
             "properties": {
-              "AddressPrefix": "0.0.0.0/0",
+              "addressPrefix": "0.0.0.0/0",
               "nextHopType": "VirtualAppliance",
               "nextHopIPAddress": "[variables('FGDMZAddress')]"
             }
@@ -449,7 +397,7 @@
     {
       "apiVersion": "[variables('apiVer')]",
       "tags": {
-       "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('network_NIC_fg12_Name')]",
@@ -476,20 +424,20 @@
     {
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[variables('compute_VM_fg1_Name')]",
-      "apiVersion": "[variables('apiVer')]",
+      "apiVersion": "2017-03-30",
       "tags": {
-       "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
       "location": "[parameters('location')]",
       "plan": {
-        "name": "fortinet_fg-vm",
+        "name": "[parameters('FortiGateImageSKU')]",
         "publisher": "fortinet",
         "product": "fortinet_fortigate-vm_v5"
       },
       "dependsOn": [
         "[concat('Microsoft.Resources/deployments/', 'SettingUpPublicIPandFollowing')]",
         "[concat('Microsoft.Network/networkInterfaces/',variables('network_NIC_fg12_Name'))]",
-        "[concat('Microsoft.Resources/deployments/', 'SettingUpStorageAccount')]"
+        "[concat('Microsoft.Resources/deployments/', 'SettingUpAvailabilitySet')]"
       ],
       "properties": {
         "hardwareProfile": {
@@ -507,25 +455,16 @@
           "imageReference": {
             "publisher": "fortinet",
             "offer": "fortinet_fortigate-vm_v5",
-            "sku": "fortinet_fg-vm",
+            "sku": "[parameters('FortiGateImageSKU')]",
             "version": "latest"
           },
           "osDisk": {
-            "name": "[concat(variables('compute_VM_fg1_Name'),'-osDisk')]",
-            "caching": "ReadWrite",
-            "createOption": "FromImage",
-            "vhd": {
-              "uri": "[concat('http://',parameters('StorageAccountName'),'.blob.core.windows.net/vhds/', variables('compute_VM_fg1_Name'),'-',deployment().name,'-',uniqueString(resourceGroup().id),'-osdisk.vhd')]"
-            }
+            "createOption": "FromImage"
           },
           "dataDisks": [
             {
-              "name": "[concat(variables('compute_VM_fg1_Name'),'-dataDisk')]",
               "diskSizeGB": "30",
               "lun": 0,
-              "vhd": {
-                "uri": "[concat('http://',parameters('StorageAccountName'),'.blob.core.windows.net/vhds/', variables('compute_VM_fg1_Name'),'-',deployment().name,'-',uniqueString(resourceGroup().id),'-datadisk.vhd')]"
-              },
               "createOption": "Empty"
             }
           ]

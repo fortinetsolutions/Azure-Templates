@@ -9,7 +9,7 @@
       }
     },
     "compute_AvailabilitySet_Name":{
-      "type": "string",
+      "type": "string"
     },
     "FortinetTags": {
       "type": "object"

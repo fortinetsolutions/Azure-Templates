@@ -9,7 +9,7 @@
       }
     },
     "compute_AvailabilitySet_Name":{
-      "type": "string",
+      "type": "string"
     },
     "FortinetTags": {
       "type": "object"
@@ -22,11 +22,18 @@
     {
       "type": "Microsoft.Compute/availabilitySets",
       "name": "[parameters('compute_AvailabilitySet_Name')]",
-      "apiVersion": "[variables('apiVer')]",
+      "apiVersion": "2017-03-30",
       "tags": {
-       "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
-      "location": "[parameters('location')]"
-    },
+      "location": "[parameters('location')]",
+      "properties": {
+        "platformFaultDomainCount": "2",
+        "platformUpdateDomainCount": "2"
+      },
+      "sku": {
+        "name": "Aligned"
+      }
+    }
   ]
 }
