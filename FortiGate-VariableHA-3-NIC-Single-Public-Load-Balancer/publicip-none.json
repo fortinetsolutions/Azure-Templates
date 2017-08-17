@@ -1,0 +1,78 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location"
+      }
+    },
+    "publicIPAddressNamePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP Address Name"
+      }
+    },
+    "publicIPAddressType": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP Address Type (e.g. Static or Dynamic)"
+      }
+    },
+    "VMNamePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "FortiGate name"
+      }
+    },
+    "subnet1Ref": {
+      "type": "string",
+      "metadata": {
+        "description": "subnet 1 reference ID"
+      }
+    },
+    "scaleNumber": {
+      "type": "int",
+      "metadata": {
+        "description": "number of appliances being built"
+      }
+    },
+      "FortinetTags": {
+        "type": "object"
+      }
+    },
+  "variables": {
+    "apiVer": "2015-06-15"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVer')]",
+      "tags": {
+        "provider": "[toUpper(parameters('FortinetTags').provider)]"
+      },
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(parameters('vmNamePrefix'),'-', copyindex(), '-nic0')]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "nicloop",
+        "count": "[parameters('scaleNumber')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[parameters('subnet1Ref')]"
+              }
+            }
+          }
+        ],
+        "enableIPForwarding": true
+      }
+    }
+  ]
+
+}
