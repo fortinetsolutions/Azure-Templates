@@ -28,7 +28,7 @@
     },
     "FortiGateImageSKU": {
       "type": "string",
-      "defaultValue": "fortinet_fg-vm_payg",
+      "defaultValue": "fortinet_fg-vm",
       "allowedValues": [
         "fortinet_fg-vm",
         "fortinet_fg-vm_payg"
@@ -52,7 +52,7 @@
     },
     "instanceType": {
       "type": "string",
-      "defaultValue": "Standard_D3_v2",
+      "defaultValue": "Standard_F4",
       "metadata": {
         "description": "Virtual Machine size selection"
       }
