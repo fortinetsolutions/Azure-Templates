@@ -1,4 +1,4 @@
-## Active/Active loadbalanced pair of standalone FortiGates for resliancy and scale
+## Active/Active loadbalanced pair of standalone FortiGates for resilience and scale
 The following resources are defined:
 - vnet with three subnets
                 or allows an existing vnet of your selection.  If using an existing vnet, it must already have 3 subnets.
