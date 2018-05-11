@@ -1,0 +1,113 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network name (e.g. vnet-haivision)"
+      }
+    },
+    "vnetResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network Resource Group"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network Address Prefix (i.e. CIDR)"
+      }
+    },
+    "subnet1Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Server will be deployed into this subnet within the Virtual Network"
+      }
+    },
+    "subnet1AddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network subnet Address Prefix (i.e. CIDR)"
+      }
+    },
+    "subnet2Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Server will be deployed into this subnet within the Virtual Network"
+      }
+    },
+    "subnet2AddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network subnet Address Prefix (i.e. CIDR)"
+      }
+    },
+    "routeTable1Name": {
+      "type": "string"
+    },
+    "routeTable2Name": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "vnetID": "[resourceId(parameters('vnetResourceGroup'), 'Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
+    "subnet1ID": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
+    "subnet2ID": "[concat(variables('vnetID'),'/subnets/',parameters('subnet2Name'))]",
+    "routeTable1Id": "[resourceId('Microsoft.Network/routeTables',parameters('routeTable1Name'))]",
+    "routeTable2Id": "[resourceId('Microsoft.Network/routeTables',parameters('routeTable2Name'))]",
+    "apiVer": "2015-06-15"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVer')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[parameters('vnetName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[parameters('subnet1Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnet1AddressPrefix')]",
+              "routeTable": {
+                "id": "[variables('routeTable1Id')]"
+              }
+            }
+          },
+          {
+            "name": "[parameters('Subnet2Name')]",
+            "properties": {
+              "addressPrefix": "[parameters('Subnet2AddressPrefix')]",
+              "routeTable": {
+                "id": "[variables('routeTable2Id')]"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "subnet1ID": {
+      "value": "[variables('subnet1ID')]",
+      "type": "string"
+    },
+    "subnet2ID": {
+      "value": "[variables('subnet2ID')]",
+      "type": "string"
+    }
+  }
+}

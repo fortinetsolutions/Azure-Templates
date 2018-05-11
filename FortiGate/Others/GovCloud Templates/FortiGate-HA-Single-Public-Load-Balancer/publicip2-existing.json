@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location"
+      }
+    },
+    "publicIPAddress2ResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource Group"
+      }
+    },
+    "publicIPAddress2Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP Address Name"
+      }
+    },
+    "publicIPAddressType": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP Address Type (e.g. Static or Dynamic)"
+      }
+    },
+    "dns2Name": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP DNS prefix (e.g. [dnsName].region.cloudapp.azure.com)"
+      }
+    }
+  },
+  "variables": {
+    "publicIP2ID": "[resourceId(parameters('publicIPAddress2ResourceGroup'),'Microsoft.Network/publicIPAddresses',parameters('publicIPAddress2Name'))]",
+    "apiVer": "2015-06-15"
+  },
+  "resources": [
+  ],
+    "outputs": {
+        "public2IPID": {
+            "value": "[variables('publicIP2ID')]",
+            "type": "string"
+        }
+    }
+}

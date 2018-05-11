@@ -1,0 +1,202 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location"
+      }
+    },
+    "publicIPsAddressNamePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP Address Name"
+      }
+    },
+    "publicIPAddressType": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP Address Type (e.g. Static or Dynamic)"
+      }
+    },
+    "vmNamePrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "FortiWeb name"
+      }
+    },
+    "subnet1Ref": {
+      "type": "string",
+      "metadata": {
+        "description": "subnet 1 reference ID"
+      }
+    },
+    "scaleNumber": {
+      "type": "int",
+      "metadata": {
+		  "description": "Number of NICs and PIPs to create"
+      }
+    },
+    "FortinetTags": {
+      "type": "object"
+    }
+  },
+  "variables": {
+    "publicIPID": "[resourceID('Microsoft.Network/publicIPAddresses',concat(parameters('publicIPsAddressNamePrefix'),'-LB'))]",
+    "network_LB_Public_Name": "[concat(parameters('vmNamePrefix'),'publicLB')]",
+    "network_LB_Public_Id": "[resourceId('Microsoft.Network/loadBalancers',variables('network_LB_Public_Name'))]",
+    "network_LB_Public_FEName": "publicLBFE0",
+    "network_LB_Public_FEId": "[concat(variables('network_LB_Public_Id'),'/frontendIPConfigurations/publicLBFE0')]",
+    "network_LB_Public_BEName": "publicLBBE0",
+    "network_LB_Public_BEId": "[concat(variables('network_LB_Public_Id'),'/backendAddressPools/publicLBBE0')]",
+    "lbProbeID": "[concat(variables('network_LB_Public_Id'),'/probes/lbprobe')]",
+    "apiVer": "2015-06-15"
+  },
+    "resources": [
+      {
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[concat(parameters('publicIPsAddressNamePrefix'),'-LB')]",
+        "apiVersion": "[variables('apiVer')]", 
+        "tags": {
+          "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        },
+        "location": "[parameters('location')]",
+        "properties": {
+          "publicIPAllocationMethod": "[parameters('publicIPAddressType')]"
+        }
+      },
+      {
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[concat(parameters('publicIPsAddressNamePrefix'), '-', copyindex())]",
+        "apiVersion": "[variables('apiVer')]",
+        "tags": {
+          "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        },
+        "location": "[parameters('location')]",
+        "copy": {
+          "name": "piploop",
+          "count": "[parameters('scaleNumber')]"
+        },
+        "properties": {
+          "publicIPAllocationMethod": "[parameters('publicIPAddressType')]"
+        }
+      },
+      {
+        "type": "Microsoft.Network/loadBalancers",
+        "name": "[variables('network_LB_Public_Name')]",
+        "apiVersion": "2015-06-15",
+        "tags": {
+          "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        },
+        "location": "[parameters('location')]",
+        "dependsOn": [
+          "[variables('publicIPID')]"
+        ],
+        "properties": {
+          "frontendIPConfigurations": [
+            {
+              "name": "[variables('network_LB_Public_FEName')]",
+              "properties": {
+                "publicIPAddress": {
+                  "id": "[variables('publicIPID')]"
+                }
+              }
+            }
+          ],
+          "backendAddressPools": [
+            {
+              "name": "[variables('network_LB_Public_BEName')]"
+            }
+          ],
+          "loadBalancingRules": [
+            {
+              "properties": {
+                "frontendIPConfiguration": {
+                  "id": "[variables('network_LB_Public_FEId')]"
+                },
+                "backendAddressPool": {
+                  "id": "[variables('network_LB_Public_BEId')]"
+                },
+                "protocol": "Tcp",
+                "frontendPort": 443,
+                "backendPort": 443,
+                "enableFloatingIP": true,
+                "probe": {
+                  "id": "[variables('lbProbeID')]"
+                }
+              },
+              "Name": "HTTPS-LB-Rule"
+            },
+            {
+              "properties": {
+                "frontendIPConfiguration": {
+                  "id": "[variables('network_LB_Public_FEId')]"
+                },
+                "backendAddressPool": {
+                  "id": "[variables('network_LB_Public_BEId')]"
+                },
+                "protocol": "Tcp",
+                "frontendPort": 80,
+                "backendPort": 80,
+                "enableFloatingIP": true,
+                "probe": {
+                  "id": "[variables('lbProbeID')]"
+                }
+              },
+              "Name": "HTTP-LB-Rule"
+            }
+          ],
+          "probes": [
+            {
+              "properties": {
+                "protocol": "Tcp",
+                "port": 22,
+                "intervalInSeconds": 5,
+                "numberOfProbes": 2
+              },
+              "name": "lbprobe"
+            }
+          ]
+        }
+      },
+      {
+        "apiVersion": "[variables('apiVer')]",
+        "tags": {
+          "provider": "[toUpper(parameters('FortinetTags').provider)]"
+        },
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[concat(parameters('vmNamePrefix'),'-', copyindex(), '-nic0')]",
+        "location": "[parameters('location')]",
+        "copy": {
+          "name": "nicloop",
+          "count": "[parameters('scaleNumber')]"
+        },
+		    "dependsOn": [
+          "[variables('network_LB_Public_Id')]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "publicIPAddress": {
+                  "id": "[resourceId ('Microsoft.Network/publicIPAddresses/', concat(parameters('publicIPsAddressNamePrefix'), '-', copyindex()))]"
+                },
+                "privateIPAllocationMethod": "Dynamic",
+                "subnet": {
+                  "id": "[parameters('subnet1Ref')]"
+                },
+                "loadBalancerBackendAddressPools": [
+                  {
+                    "id": "[variables('network_LB_Public_BEId')]"
+                  }
+                ]
+              }
+            }
+          ],
+          "enableIPForwarding": true
+        }
+      }
+    ]
+}
