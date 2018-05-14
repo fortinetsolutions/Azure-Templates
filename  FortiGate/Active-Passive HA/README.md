@@ -56,8 +56,8 @@ This second diagram shows what will happen in the event FortiGate A is shut down
       next
       edit "port3"
         set vdom "root"
-        set mode static 
-        set ip 10.0.3.4 255.255.255.240 
+        set mode static
+        set ip 10.0.3.4 255.255.255.240
         set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
         set description "hasyncport"
       next
@@ -89,7 +89,7 @@ This second diagram shows what will happen in the event FortiGate A is shut down
       set unicast-hb-peerip 10.0.3.5
     end
     
-    Once complete with this config on FGT A, you may need to restablish the SSH session.  You can do so to the cluster IP again, or connect the the public IP for management set to port4.  From that SSH session connect to FortiGate B port1 via ssh:
+Once complete with this config on FGT A, you may need to restablish the SSH session.  You can do so to the cluster IP again, or connect the the public IP for management set to port4.  From that SSH session connect to FortiGate B port1 via ssh:
     
     execute ssh 10.0.1.5
     
