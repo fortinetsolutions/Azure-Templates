@@ -39,7 +39,7 @@
     },
     "FortiGateVersion": {
       "type": "string",
-      "defaultValue": "latest",
+      "defaultValue": "6.0.0",
       "allowedValues": [
         "5.2.9",
         "5.4.6",
@@ -53,7 +53,7 @@
     },
     "instanceType": {
       "type": "string",
-      "defaultValue": "Standard_F1",
+      "defaultValue": "Standard_F1s",
       "metadata": {
         "description": "Virtual Machine size selection"
       }
@@ -82,28 +82,24 @@
     },
     "publicIPAddressName": {
       "type": "string",
-      "defaultValue": "",
       "metadata": {
         "description": "Name of Public IP address element."
       }
     },
     "publicIPAddressResourceGroup": {
       "type": "string",
-      "defaultValue": "",
       "metadata": {
         "description": "Resource group to which the Public IP belongs."
       }
     },
     "publicIPAddress2Name": {
       "type": "string",
-      "defaultValue": "",
       "metadata": {
         "description": "Name of Public IP address element."
       }
     },
     "publicIPAddress2ResourceGroup": {
       "type": "string",
-      "defaultValue": "",
       "metadata": {
         "description": "Resource group to which the Public IP belongs."
       }
@@ -121,7 +117,7 @@
     },
     "vnetNewOrExisting": {
       "type": "string",
-      "defaultValue": "new",
+      "defaultValue": "existing",
       "allowedValues": [
         "new",
         "existing"
@@ -138,65 +134,56 @@
     },
     "vnetResourceGroup": {
       "type": "string",
-      "defaultValue": "",
       "metadata": {
         "description": "Resource Group containing the virtual network - or new resource group from above (if new vnet)"
       }
     },
     "vnetAddressPrefix": {
       "type": "string",
-      "defaultValue": "10.0.0.0/16",
       "metadata": {
         "description": "Virtual Network Address prefix"
       }
     },
     "Subnet1Name": {
       "type": "string",
-      "defaultValue": "EntrySubnet",
       "metadata": {
         "description": "Subnet 1 Name"
       }
     },
     "Subnet1Prefix": {
       "type": "string",
-      "defaultValue": "10.0.1.0/24",
       "metadata": {
         "description": "Subnet 1 Prefix"
       }
     },
     "Subnet2Name": {
       "type": "string",
-      "defaultValue": "TransitSubnet",
       "metadata": {
         "description": "Subnet 2 Name"
       }
     },
     "Subnet2Prefix": {
       "type": "string",
-      "defaultValue": "10.0.2.0/24",
       "metadata": {
         "description": "Subnet 2 Prefix"
       }
     },
     "subnet2LoadBalancerIP": {
       "type": "string",
-      "defaultValue":  "10.0.2.10",
       "metadata": {
         "description": "Static IP for protected network facing frontend of the internal load balancer."
       }
     },
     "Subnet3Name": {
       "type": "string",
-      "defaultValue": "ProtectedSubnet",
       "metadata": {
         "description": "Subnet 3 Name"
       }
     },
     "Subnet3Prefix": {
       "type": "string",
-      "defaultValue": "10.0.3.0/24",
       "metadata": {
-        "description": "Subnet 2 Prefix"
+        "description": "Subnet 3 Prefix"
       }
     },
     "FortinetTags": {
