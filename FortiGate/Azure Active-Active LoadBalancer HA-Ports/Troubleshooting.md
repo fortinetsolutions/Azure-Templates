@@ -5,7 +5,7 @@ Public Load Balancer
 ---
 
 
-The Azure Public Load Balancer is primarily situated for inbound public connections.  It has two types of inbound connections supported - "Load balancer rules" and "NAT rules".  Load balancer rules are for that traffic which you wish to have resliant and/or scaled.  These rules can be configured to use DNAT (default) or Direct Server Return (preferred). This is the typical use case, and there are some sample rules in place, defined by the template set.  NAT rules are primarily for management purposes.  These rules forward traffic (using DNAT) to only one of the backend pool (in this case either FortiGate A or FortiGate B).  By default port 443 and 22 for the first frontend are forwarded to FortiGate A, the same ports for the second frontend are forwarded to FortiGate B. 
+The Azure Public Load Balancer is primarily situated for inbound public connections.  It has two types of inbound connections supported - "Load balancer rules" and "NAT rules".  Load balancer rules are for that traffic which you wish to be resliant and/or scaled.  These rules can be configured to use DNAT (default) or Direct Server Return (preferred). This is the typical use case, and there are some sample rules in place, defined by the template set.  NAT rules are primarily for management purposes.  These rules forward traffic (using DNAT) to only one of the backend pool (in this case either FortiGate A or FortiGate B).  By default port 443 and 22 for the first frontend are forwarded to FortiGate A, the same ports for the second frontend are forwarded to FortiGate B. 
 
 ### Possible Problem: Unable to use port 22 or 443 for Load Balancer rules
 #### Reason: 
