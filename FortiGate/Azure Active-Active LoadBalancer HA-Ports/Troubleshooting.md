@@ -11,9 +11,10 @@ The Azure Public Load Balancer is primarily situated for inbound public connecti
 #### Reason: 
 These ports are used in the "NAT rules"
 #### Solution:
-
-    Option1 - You can add new frontends and public IPs to support this traffic.  
-    Option2 - You can change the management interface or management TCP ports on the ForiGates, delete or modify the NAT rules accordingly, and then ports 22 and 443 will be available to use for load balancer rules using the default frontends and public IPs.
+##### Option1 - 
+You can add new frontends and public IPs to support this traffic.  
+##### Option2 - 
+You can change the management interface or management TCP ports on the ForiGates, delete or modify the NAT rules accordingly, and then ports 22 and 443 will be available to use for load balancer rules using the default frontends and public IPs.
 
 ### Possible Problem: Unable to communicate outbound from the FortiGate
 
