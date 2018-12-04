@@ -1,0 +1,72 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "FortiGateName": {
+            "value": "yourfortigate001"
+        },
+        "adminUsername": {
+            "value": "youradmin"
+        },
+        "adminPassword": {
+            "value": null
+        },
+        "FortiGateImageSKU": {
+            "value": "fortinet_fg-vm"
+        },
+        "FortiGateImageVersion": {
+            "value": "6.0.3"
+        },
+        "instanceType": {
+            "value": "Standard_F1"
+        },
+        "publicIPAddressName": {
+            "value": "publicip-fortigate"
+        },
+        "publicIPAddressType": {
+            "value": "Static"
+        },
+        "publicIPNewOrExistingOrNone": {
+            "value": "new"
+        },
+        "publicIPResourceGroup": {
+            "value": "yourrsgroup001"
+        },
+        "location": {
+            "value": "Korea South"
+        },
+        "vnetNewOrExisting": {
+            "value": "new"
+        },
+        "vnetName": {
+            "value": "yourrsgroup001"
+        },
+        "vnetResourceGroup": {
+            "value": "yourrsgroup001"
+        },
+        "vnetAddressPrefix": {
+            "value": "10.8.0.0/16"
+        },
+        "Subnet1Name": {
+            "value": "PublicFacingSubnet"
+        },
+        "Subnet1Prefix": {
+            "value": "10.8.0.0/24"
+        },
+        "Subnet2Name": {
+            "value": "InsideSubnet"
+        },
+        "Subnet2Prefix": {
+            "value": "10.8.1.0/24"
+        },
+        "configURI": {
+            "value": "https://jkatostorage001.blob.core.windows.net/jkatostorage1/abc/config.txt?sp=r&st=2018-12-04T01:09:58Z&se=2018-12-10T09:09:58Z&spr=https&sv=2017-11-09&sig=48OpwPx4DLllnlbiFa7H7IiFZAowQMnDiJp0kA0xptE%3D&sr=b"
+        },
+        "licenseURI": {
+            "value": "https://jkatostorage001.blob.core.windows.net/jkatostorage1/abc/license.txt?sp=r&st=2018-12-04T01:12:42Z&se=2018-12-10T09:12:42Z&spr=https&sv=2017-11-09&sig=E7WOjPZq7VQFnu7UgYWRpEshhnOxe%2FUa%2F84dkbNnyVM%3D&sr=b"
+        },
+        "ArtifactsBaseURI": {
+            "value": "https://gallery.azure.com/artifact/20151001/fortinet.fortinet-fortigate-singlevmfortigate-singlevm.1.0.26/Artifacts"
+        }
+    }
+}
