@@ -15,7 +15,7 @@ echo "numberOfNics : $numberOfNics"
 
 
 # Provide your basic profiles
-$subscriptionID = "2f96c44c-cfb2-4621-bd36-65ba45185e0c"  <# Choose the subscription ID which is entitled to purchase marketplace products #>
+$subscriptionID = "2f96c44c-xxxx-xxxx-xxxx-65ba45185e0c"  <# Choose the subscription ID which is entitled to purchase marketplace products #>
 $key = "123456789abcdefg$%#@!"                            <# random seed ; any strings will be fine #>
 
 # Required variables
@@ -27,7 +27,7 @@ $password = 'Y0urPassw@rd'  <# Login password #>
 $vmName = "jkatovmname001"  <# FortiGate-VM hostname #>
 $vmsize = "Standard_F1"
 $storageAccountName = "jkatostorage001"   <# Your storage account; make sure this account exists under the resource group you specified #>
-$storageAccountKey = "IuPSY8i7yOr0NprLKdbbbo5mj3cDJAC4i/EquMIvtz4mU9xb2rJDCzZ4Ht5zg0EYW3EeCbHaqNXP1RwqXSHaBA==" <# Your Storage account key #>
+$storageAccountKey = "IuPSY8i7yOr0NprLxxxxxxxxxxxxxxxxxxxxaqNXP1RwqXSHaBA==" <# Your Storage account key #>
 $sourceVhd = "C:\Azure\vhds\fortios.vhd" <# Source VHD path on your PC #>
 $destinationVhd = "https://jkatostorage001.blob.core.windows.net/jkatocontainer/fortios.vhd"  <# Copied destination VHD path in your container #>
 $osDiskUri = "https://jkatostorage001.blob.core.windows.net/disks/fortigate.vhd" <# Actual OS boot disk created in your blob #>
