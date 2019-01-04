@@ -18,15 +18,14 @@ This second diagram shows what will happen in the event FortiGate A is shut down
 
 ---
 
-### In order to configure FortiGates:
+### FortiGate configuration:
+
+The FortiGates will be preconfigured similar to the following.  You should be able to connect via https on port 8443 (example: https://104.45.185.229:8443) or via SSH on port 22.  Use the management Public IP for each FortiGate to connect.
 
     FortiGate-A:
-    Connect via ssh to the cluster IP of port1 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
-    Configure FortiGate A so that all four interfaces have static IPs (which match those assigned in the Azure portal).  Be sure to setup a manual gateway first.  This should point to the first IP address of subnet 1.  
-    Next configure the HA settings.  The following is a sample config, based on the defaults in this template set.  If copying and pasting, be sure that there are no tabs or other characters that will confuse the FGT CLI.
     
     config system global
-      set admintimeout 480
+      set admin-sport 8443
     end
     config router static
       edit 1
@@ -34,7 +33,7 @@ This second diagram shows what will happen in the event FortiGate A is shut down
         set device port1
       next
       edit 2
-        set dst 10.0.5.0 255.255.255.0
+        set dst 10.0.0.0 255.255.0.0
         set gateway 10.0.2.1
         set device "port2"
       next
@@ -51,21 +50,19 @@ This second diagram shows what will happen in the event FortiGate A is shut down
         set vdom "root"
         set mode static
         set ip 10.0.2.4 255.255.255.0
-        set allowaccess ping probe-response capwap ftm
         set description "internal"
       next
       edit "port3"
         set vdom "root"
         set mode static
         set ip 10.0.3.4 255.255.255.240
-        set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
         set description "hasyncport"
       next
       edit "port4"
         set vdom "root"
         set mode static
         set ip 10.0.4.4 255.255.255.240
-        set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
+        set allowaccess ping https ssh 
         set description "management"
       next
     end
@@ -89,14 +86,10 @@ This second diagram shows what will happen in the event FortiGate A is shut down
       set unicast-hb-peerip 10.0.3.5
     end
     
-Once complete with this config on FGT A, you may need to restablish the SSH session.  You can do so to the cluster IP again, or connect the the public IP for management set to port4.  From that SSH session connect to FortiGate B port1 via ssh:
-    
-    execute ssh 10.0.1.5
-    
-    Complete a similar configuration on FortiGate B with different IPs and priority:
+    FortiGate B:
     
     config system global
-      set admintimeout 480
+      set admin-sport 8443
     end
     config router static
       edit 1
@@ -104,7 +97,7 @@ Once complete with this config on FGT A, you may need to restablish the SSH sess
         set device port1
       next
       edit 2
-        set dst 10.0.5.0 255.255.255.0
+        set dst 10.0.0.0 255.255.0.0
         set gateway 10.0.2.1
       set device "port2"
       next
@@ -114,27 +107,25 @@ Once complete with this config on FGT A, you may need to restablish the SSH sess
         set vdom "root"
         set mode static
         set ip 10.0.1.5 255.255.255.0
-        set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
+        set allowaccess ping https ssh 
         set description "external"
       next
       edit "port2"
         set vdom "root"
         set mode static
         set ip 10.0.2.5 255.255.255.0
-        set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
         set description "internal"
       next
       edit "port3"
         set mode static
         set ip 10.0.3.5 255.255.255.240
-        set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
         set description "hasyncport"
       next
       edit "port4"
         set vdom "root"
         set mode static
         set ip 10.0.4.5 255.255.255.240
-        set allowaccess ping https ssh snmp http telnet fgfm radius-acct probe-response capwap ftm
+        set allowaccess ping https ssh
         set description "management"
       next
     end

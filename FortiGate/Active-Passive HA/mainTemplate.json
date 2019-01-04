@@ -56,20 +56,6 @@
         "description": "Virtual Machine size selection - must be F4 or other instance that supports 4 NICs"
       }
     },
-    "FGTAConf": {
-      "type": "string",
-      "defaultValue": "echo customData",
-      "metadata": {
-        "description": "String passed down to the Virtual Machine."
-      }
-    },
-    "FGTBConf": {
-      "type": "string",
-      "defaultValue": "echo customData",
-      "metadata": {
-        "description": "String passed down to the Virtual Machine."
-      }
-    },
     "publicIPNewOrExisting": {
       "type": "string",
       "defaultValue": "new",
@@ -321,6 +307,42 @@
     "publicIP3ID": "[resourceID(parameters('publicIPAddress3ResourceGroup'),'Microsoft.Network/publicIPAddresses',parameters('publicIPAddress3Name'))]",
 
     "NSGName": "[concat(parameters('FortiGateNamePrefix'),'-',uniqueString(resourceGroup().id),'-NSG')]",
+
+    "sn1IPArray": "[split(parameters('Subnet1Prefix'),'.')]",
+    "sn1IPArray2ndString": "[string(variables('sn1IPArray')[3])]",
+    "sn1IPArray2nd": "[split(variables('sn1IPArray2ndString'),'/')]",
+    "sn1CIDRmask": "[string(int(variables('sn1IPArray2nd')[1]))]",
+    "sn1IPArray3": "[string(add(int(variables('sn1IPArray2nd')[0]),1))]",
+    "sn1IPArray2": "[string(int(variables('sn1IPArray')[2]))]",
+    "sn1IPArray1": "[string(int(variables('sn1IPArray')[1]))]",
+    "sn1IPArray0": "[string(int(variables('sn1IPArray')[0]))]",
+    "sn1GatewayIP": "[concat(variables('sn1IPArray0'),'.',variables('sn1IPArray1'),'.',variables('sn1IPArray2'),'.',variables('sn1IPArray3'))]",
+
+    "sn2IPArray": "[split(parameters('Subnet2Prefix'),'.')]",
+    "sn2IPArray2ndString": "[string(variables('sn2IPArray')[3])]",
+    "sn2IPArray2nd": "[split(variables('sn2IPArray2ndString'),'/')]",
+    "sn2CIDRmask": "[string(int(variables('sn2IPArray2nd')[1]))]",
+    "sn2IPArray3": "[string(add(int(variables('sn2IPArray2nd')[0]),1))]",
+    "sn2IPArray2": "[string(int(variables('sn2IPArray')[2]))]",
+    "sn2IPArray1": "[string(int(variables('sn2IPArray')[1]))]",
+    "sn2IPArray0": "[string(int(variables('sn2IPArray')[0]))]",
+    "sn2GatewayIP": "[concat(variables('sn2IPArray0'),'.',variables('sn2IPArray1'),'.',variables('sn2IPArray2'),'.',variables('sn2IPArray3'))]",
+
+    "sn3IPArray": "[split(parameters('Subnet3Prefix'),'.')]",
+    "sn3IPArray2ndString": "[string(variables('sn3IPArray')[3])]",
+    "sn3IPArray2nd": "[split(variables('sn3IPArray2ndString'),'/')]",
+    "sn3CIDRmask": "[string(int(variables('sn3IPArray2nd')[1]))]",
+
+    "sn4IPArray": "[split(parameters('Subnet4Prefix'),'.')]",
+    "sn4IPArray2ndString": "[string(variables('sn4IPArray')[3])]",
+    "sn4IPArray2nd": "[split(variables('sn4IPArray2ndString'),'/')]",
+    "sn4CIDRmask": "[string(int(variables('sn4IPArray2nd')[1]))]",
+    "sn4IPArray3": "[string(add(int(variables('sn4IPArray2nd')[0]),1))]",
+    "sn4IPArray2": "[string(int(variables('sn4IPArray')[2]))]",
+    "sn4IPArray1": "[string(int(variables('sn4IPArray')[1]))]",
+    "sn4IPArray0": "[string(int(variables('sn4IPArray')[0]))]",
+    "sn4GatewayIP": "[concat(variables('sn4IPArray0'),'.',variables('sn4IPArray1'),'.',variables('sn4IPArray2'),'.',variables('sn4IPArray3'))]",
+
 
     "updateIPURI": "[concat(parameters('artifactsBaseURL'),'/update-nic.json')]",
     "updateIP2URI": "[concat(parameters('artifactsBaseURL'),'/update-nic2.json')]"
@@ -1036,7 +1058,7 @@
           "computerName": "[variables('compute_VM_fg1_Name')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]",
-          "customData": "[base64(parameters('FGTAConf'))]"
+          "customData": "[base64(concat('config system global\n set admin-sport 8443\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', parameters('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg11_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg12_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n next\n edit port3\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg13_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn3CIDRmask'), '\n set description hasyncport\n next\n edit port4\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg14_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn4CIDRmask'), '\n set description management\n set allowaccess ping https ssh ftm\n next\n end\n config system ha\n set group-name AzureHA\n set mode a-p\n set hbdev port3 100\n set session-pickup enable\n set session-pickup-connectionless enable\n set ha-mgmt-status enable\n config ha-mgmt-interfaces\n edit 1\n set interface port4\n set gateway ', variables('sn4GatewayIP'),'\n next\n end\n set override disable\n set priority 255\n set unicast-hb enable\n set unicast-hb-peerip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg23_Name'))).ipConfigurations[0].properties.privateIPAddress, '\n end'))]"
         },
         "storageProfile": {
           "imageReference": {
@@ -1116,7 +1138,7 @@
           "computerName": "[variables('compute_VM_fg2_Name')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]",
-          "customData": "[base64(parameters('FGTBConf'))]"
+          "customData": "[base64(concat('config system global\n set admin-sport 8443\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', parameters('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg21_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg22_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n next\n edit port3\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg23_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn3CIDRmask'), '\n set description hasyncport\n next\n edit port4\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg24_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn4CIDRmask'), '\n set description management\n set allowaccess ping https ssh ftm\n next\n end\n config system ha\n set group-name AzureHA\n set mode a-p\n set hbdev port3 100\n set session-pickup enable\n set session-pickup-connectionless enable\n set ha-mgmt-status enable\n config ha-mgmt-interfaces\n edit 1\n set interface port4\n set gateway ', variables('sn4GatewayIP'),'\n next\n end\n set override disable\n set priority 1\n set unicast-hb enable\n set unicast-hb-peerip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg13_Name'))).ipConfigurations[0].properties.privateIPAddress, '\n end'))]"
         },
         "storageProfile": {
           "imageReference": {
