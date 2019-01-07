@@ -37,16 +37,11 @@
         "description": "Identifies whether to to use PAYG (on demand licensing) or BYOL license model (where license is purchased separately)"
       }
     },
-    "FortiGateVersion": {
+    "FortiGateImageVersion": {
       "type": "string",
       "defaultValue": "latest",
-      "allowedValues": [
-        "5.6.5",
-        "6.0.3",
-        "latest"
-      ],
       "metadata": {
-        "description": "Select version"
+        "description": "Select image version."
       }
     },
     "instanceType": {
@@ -176,13 +171,6 @@
         "description": "Subnet 2 Prefix"
       }
     },
-    "subnet2LoadBalancerIP": {
-      "type": "string",
-      "defaultValue":  "10.0.2.10",
-      "metadata": {
-        "description": "Static IP for protected network facing frontend of the internal load balancer."
-      }
-    },
     "Subnet3Name": {
       "type": "string",
       "defaultValue": "ProtectedSubnet",
@@ -224,8 +212,6 @@
     "vm2Name": "[concat(parameters('FortiGateNamePrefix'),'-B')]",
 
     "routeTable2Name": "[concat(parameters('Subnet2Name'),'-',parameters('FortiGateNamePrefix'),'RouteTable')]",
-    "subnet2KnownIP": "[parameters('subnet2LoadBalancerIP')]",
-    "routeTable2Id": "[resourceId('Microsoft.Network/routeTables',variables('routeTable2Name'))]",
 
     "internalLBName": "[concat(parameters('FortiGateNamePrefix'),'-InternalLoadBalancer')]",
     "internalLBFE2Name": "[concat(parameters('FortiGateNamePrefix'),'-ILB-',parameters('Subnet2Name'),'-FrontEnd')]",
@@ -249,6 +235,27 @@
     "publicIP2ID": "[resourceID(parameters('publicIPAddress2ResourceGroup'),'Microsoft.Network/publicIPAddresses',parameters('publicIPAddress2Name'))]",
 
     "NSGName": "[concat(parameters('FortiGateNamePrefix'),'-',uniqueString(resourceGroup().id),'-NSG')]",
+
+    "sn1IPArray": "[split(parameters('Subnet1Prefix'),'.')]",
+    "sn1IPArray2ndString": "[string(variables('sn1IPArray')[3])]",
+    "sn1IPArray2nd": "[split(variables('sn1IPArray2ndString'),'/')]",
+    "sn1CIDRmask": "[string(int(variables('sn1IPArray2nd')[1]))]",
+    "sn1IPArray3": "[string(add(int(variables('sn1IPArray2nd')[0]),1))]",
+    "sn1IPArray2": "[string(int(variables('sn1IPArray')[2]))]",
+    "sn1IPArray1": "[string(int(variables('sn1IPArray')[1]))]",
+    "sn1IPArray0": "[string(int(variables('sn1IPArray')[0]))]",
+    "sn1GatewayIP": "[concat(variables('sn1IPArray0'),'.',variables('sn1IPArray1'),'.',variables('sn1IPArray2'),'.',variables('sn1IPArray3'))]",
+
+    "sn2IPArray": "[split(parameters('Subnet2Prefix'),'.')]",
+    "sn2IPArray2ndString": "[string(variables('sn2IPArray')[3])]",
+    "sn2IPArray2nd": "[split(variables('sn2IPArray2ndString'),'/')]",
+    "sn2CIDRmask": "[string(int(variables('sn2IPArray2nd')[1]))]",
+    "sn2IPArray3": "[string(add(int(variables('sn2IPArray2nd')[0]),1))]",
+    "sn2IPArray2": "[string(int(variables('sn2IPArray')[2]))]",
+    "sn2IPArray1": "[string(int(variables('sn2IPArray')[1]))]",
+    "sn2IPArray0": "[string(int(variables('sn2IPArray')[0]))]",
+    "sn2GatewayIP": "[concat(variables('sn2IPArray0'),'.',variables('sn2IPArray1'),'.',variables('sn2IPArray2'),'.',variables('sn2IPArray3'))]",
+
 
     "network_LB_Public_NatRule_FGAdminPerm_fg1_Name": "[concat(variables('VMName'),'FGAdminPerm')]",
     "network_LB_Public_NatRule_FGAdminPerm_fg1_Id": "[concat(variables('network_LB_Public_Id'),'/inboundNatRules/',variables('network_LB_Public_NatRule_FGAdminPerm_fg1_Name'))]",
@@ -300,35 +307,11 @@
       }
     },
     {
-      "type": "Microsoft.Network/routeTables",
-      "name": "[variables('routeTable2Name')]",
-      "apiVersion": "2017-09-01",
-      "tags": {
-       "provider": "[toUpper(parameters('FortinetTags').provider)]"
-      },
-      "location": "[parameters('location')]",
-      "properties": {
-        "routes": [
-          {
-            "name": "toDefault",
-            "properties": {
-              "addressPrefix": "0.0.0.0/0",
-              "nextHopType": "VirtualAppliance",
-              "nextHopIPAddress": "[variables('subnet2KnownIP')]"
-            }
-          }
-        ]
-      }
-    },
-    {
       "condition": "[equals(parameters('vnetNewOrExisting'), 'new')]",
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2017-09-01",
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/routeTables/', variables('routeTable2Name'))]"
-      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -351,10 +334,7 @@
           {
             "name": "[parameters('Subnet3Name')]",
             "properties": {
-              "addressPrefix": "[parameters('Subnet3Prefix')]",
-              "routeTable": {
-                "id": "[variables('routeTable2Id')]"
-              }
+              "addressPrefix": "[parameters('Subnet3Prefix')]"
             }
           }
         ]
@@ -379,8 +359,7 @@
           {
             "name": "[variables('internalLBFE2Name')]",
             "properties": {
-              "privateIPAddress": "[variables('subnet2KnownIP')]",
-              "privateIPAllocationMethod": "Static",
+              "privateIPAllocationMethod": "Dynamic",
               "subnet": {
                 "id": "[variables('subnet2Ref')]"
               }
@@ -422,6 +401,35 @@
               "numberOfProbes": 2
             },
             "name": "lbprobe"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/routeTables",
+      "name": "[variables('routeTable2Name')]",
+      "apiVersion": "2017-09-01",
+      "dependsOn": [
+        "[variables('internalLBName')]"
+      ],
+      "tags": {
+       "provider": "[toUpper(parameters('FortinetTags').provider)]"
+      },
+      "location": "[parameters('location')]",
+      "properties": {
+        "routes": [
+          {
+            "name": "toDefault",
+            "properties": {
+              "addressPrefix": "0.0.0.0/0",
+              "nextHopType": "VirtualAppliance",
+              "nextHopIPAddress": "[reference(concat('Microsoft.Network/loadBalancers/', variables('internalLBName'))).frontendIPConfigurations[0].properties.privateIPAddress]"
+            }
+          }
+        ],
+        "subnets": [
+          { 
+            "id": "[variables('subnet2Ref')]"
           }
         ]
       }
@@ -620,8 +628,8 @@
                 "id": "[variables('network_LB_Public_FEId')]"
               },
               "protocol": "Tcp",
-              "frontendPort": 443,
-              "backendPort": 443,
+              "frontendPort": 8443,
+              "backendPort": 8443,
               "enableFloatingIP": false
             }
           },
@@ -644,8 +652,8 @@
                 "id": "[variables('network_LB_Public_FE2Id')]"
               },
               "protocol": "Tcp",
-              "frontendPort": 443,
-              "backendPort": 443,
+              "frontendPort": 8443,
+              "backendPort": 8443,
               "enableFloatingIP": false
             }
           }
@@ -934,14 +942,15 @@
         "osProfile": {
           "computerName": "[variables('compute_VM_fg1_Name')]",
           "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]"
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('config system global\n set admin-sport 8443\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', parameters('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg11_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg12_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n  set allowaccess ping ssh\n next\n end'))]"
         },
         "storageProfile": {
           "imageReference": {
             "publisher": "fortinet",
             "offer": "fortinet_fortigate-vm_v5",
             "sku": "[parameters('FortiGateImageSKU')]",
-            "version": "[parameters('FortiGateVersion')]"
+            "version": "[parameters('FortiGateImageVersion')]"
           },
           "osDisk": {
             "createOption": "FromImage"
@@ -999,14 +1008,15 @@
         "osProfile": {
           "computerName": "[variables('compute_VM_fg2_Name')]",
           "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]"
+          "adminPassword": "[parameters('adminPassword')]",
+          "customData": "[base64(concat('config system global\n set admin-sport 8443\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', parameters('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg21_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg22_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n set allowaccess ping ssh\n next\n end'))]"
         },
         "storageProfile": {
           "imageReference": {
             "publisher": "fortinet",
             "offer": "fortinet_fortigate-vm_v5",
             "sku": "[parameters('FortiGateImageSKU')]",
-            "version": "[parameters('FortiGateVersion')]"
+            "version": "[parameters('FortiGateImageVersion')]"
           },
           "osDisk": {
             "createOption": "FromImage"
