@@ -22,6 +22,9 @@
     },
     "NSGName": {
         "type": "string"
+    },
+    "location": {
+      "type": "string"
     }
   },
   "variables": {
@@ -36,7 +39,7 @@
       },
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[parameters('nicName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "ipConfigurations": [
             {
