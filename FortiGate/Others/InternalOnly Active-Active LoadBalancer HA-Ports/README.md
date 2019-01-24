@@ -69,6 +69,13 @@ Here's the example routing table configuration:
     end
 
 
+You can also configure a master/slave for configuration synchronization using the same mechanism used for Autoscale.  This will be identical on both FortiGates.  The 'master' will self-identify based on the fact that it's assigned IP for port2 is in the configuration.
+
+    config system auto-scale
+        set status enable
+        set sync-interface "port2"
+        set master-ip 10.0.2.5
+    end
 
 
 
