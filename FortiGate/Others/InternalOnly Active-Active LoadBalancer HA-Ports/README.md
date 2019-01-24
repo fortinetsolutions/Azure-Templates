@@ -1,25 +1,14 @@
 ## Active/Active loadbalanced pair of standalone FortiGates for resilience and scale
 The following resources are defined:
-- vnet with three subnets
-                or allows an existing vnet of your selection.  If using an existing vnet, it must already have 3 subnets.
+- vnet with two subnets
+                or allows an existing vnet of your selection.  If using an existing vnet, it must already have 2 subnets.
                 
-- Two standard load balancers - one public and one internal
-                The internal load balancer has an HA Ports rule enabled to forward all traffic to the FortiGates' internal NICs
-                The public load balancer has admin ports (22 & 443) configured to forward individually to each FortiGate as "NAT Rules"
-                The public load balancer also has sample port 80 load balancer rules and a udp rule on port 10551.  At least one tcp and one udp rule must be enabled to allow outbound SNAT (https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-connections#preallocatedports)
-                
-- Two public IPs connected as frontends to an Azure public load balancer.
-
+- One internal load balancer with an HA Ports rule enabled to forward all traffic to the FortiGates' internal NICs
+ 
 - Two FortiGates
 
-The deployed template will look like the following diagram:
----
 
-![Example Diagram](https://raw.githubusercontent.com/fortinetclouddev/FortiGate-HA-for-Azure/EastWestHA2.1/diagram1.png)
-
----
-
-Although a "Protected Subnet" is created within the VNET for testing and example purposes, recommended best practice would be to use peered VNETs rather than internal subnets.  Each peered VNET can easily be protected from other peered VNETs to provide isolation without the need for distributed and potentially confusing NSGs.  Further, this model provides best practice for Azure routing.  Each Peered VNET can be treated as a stub network, and thus only a default route (0.0.0.0/0) will be needed for the Azure UDR assigned to the subnets within the peered (aka Spoke) subnets.  Note: Azure now has an option to disable BGP route replication as part of UDR configuration.  This will remove any BGP routes which may be coming in via ExpressRoute or Azure VPN Gateways.
+No "Protected Subnet" is created within the VNET for testing or example purposes.  Recommended best practice would be to use peered VNETs rather than internal subnets.  Each peered VNET can easily be protected from other peered VNETs to provide isolation without the need for distributed and potentially confusing NSGs.  Further, this model provides best practice for Azure routing.  Each Peered VNET can be treated as a stub network, and thus only a default route (0.0.0.0/0) will be needed for the Azure UDR assigned to the subnets within the peered (aka Spoke) subnets.  Note: Azure now has an option to disable BGP route replication as part of UDR configuration.  This will remove any BGP routes which may be coming in via ExpressRoute or Azure VPN Gateways.
 
 A best practice full deployment will look like the following diagram:
 ---
@@ -31,15 +20,13 @@ A best practice full deployment will look like the following diagram:
 ### In order to configure FortiGates:
 
     FortiGate-A:
-    Connect via https on TCP port 8443 to public IP1 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
-    Connect via SSH on port 22 to public IP1 to directly access the CLI
+    Connect via https on TCP port 8443 to private IP of subnet1
+    Connect via SSH on port 22 to same IP to directly access the CLI
     FortiGate-B:
-    Connect via https on TCP port 8443 to public IP2 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
-    Connect via SSH on port 22 to public IP2 to directly access the CLI
+    Connect via https on TCP port 8443 to private IP of subnet1
+    Connect via SSH on port 22 to same IP to directly access the CLI
 
-The Azure Load Balancer only has management ports configured in the NAT rules.  For highly available access through the FortiGates, it's recommended that you use additional frontends and public IPs with floating IP load balance rules (two samples are configured on port 80).  Then, you can configure Virtual IPs on the FortiGate to match the associated public IP.
-
-When configuring the policies on the FortiGates to allow and forward traffic to internal hosts, it is recommended that you enable the NAT checkbox (this will S-NAT the packets to the IP of port2).  Doing so will enforce symmetric return.  It is possible to use FGSP  to synchronize sessions and thereby allow assymetric return traffic. However this is not best practice from a security perspective, because it limits the ability of IPS by potentially only seeing one side of the conversation on each FGT.  One advantage the FortiGate has over competing products is that it does take into consideration both sides of the conversation for IPS.  So, reducing visibility in this regard may decrease IPS efficacy to similar levels with competing products.  Often S-NAT is not desired because it's necessary to retain the original source IP.  If that's the case, and your concerned about HTTP or HTTPS traffic in particular, you can enable the Load Balancing feature on the FortiGate which gives you the option to copy the source IP into the X-Forwarded-For header (See https://docs.fortinet.com/uploaded/files/3637/fortigate-load-balancing-56.pdf)
+If all traffic is going in/out of port 2, the Azure internal load balancer will maintain state and forward traffic symmetrically.  However, if necessary, you can also enable FGSP to allow asymmetric traffic flow.
 
 If you do prefer to use FGSP for session synchronization.  Here's the recommended configuration:
 
