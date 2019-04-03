@@ -1,7 +1,7 @@
 ## This template set is designed for A/P HA in Azure.  The following are created:
 	- vnet with five subnets
                 or uses an existing vnet of your selection.  If using an existing vnet, it must already have 5 subnets.
-	- three public IPs.  The first public IP is for cluster access to/through the active FortiGate. This will be assigned to a public load balancer.  The other two PIPs are for Management access.  An internal load balancer will be created as well for outbound and/or east-west communication.
+	- three public IPs.  The first public IP is for cluster access to/through the active FortiGate. This will be assigned to a public load balancer.  The other two PIPs are for Management access.  An internal load balancer will be created as well for outbound and/or east-west communication.  And a public load balancer will be created for VPN termination or other public access.
 	- Two FortiGate virtual appliances
 
 A typical use case will be for Site-to-Site VPN termination as in the following diagram:
@@ -148,7 +148,7 @@ The FortiGates will be preconfigured similar to the following.  You should be ab
       set unicast-hb-peerip 10.0.3.4
     end
 
-Next you need to apply the license unless you are using PAYG licensing.  To apply BYOL licenses, first register the licenses with http://support.fortinet.com and download the .lic files.  Note, these files may not work until 30 minutes after it's initiall created.
+Next, apply the license unless using PAYG licensing.  To apply BYOL licenses, first register the licenses with http://support.fortinet.com and download the .lic files.  Note, these files may not work until 30 minutes after initially created.
 
 Next, connect via HTTPS to both FortiGates via their management addresses and upload unique license files for each.
 
