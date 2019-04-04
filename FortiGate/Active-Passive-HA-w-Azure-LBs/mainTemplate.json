@@ -730,7 +730,8 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[parameters('vnetName')]",
-        "[variables('NSGName')]"
+        "[variables('NSGName')]",
+        "[variables('network_LB_Public_Name')]"
       ],
       "properties": {
         "ipConfigurations": [
@@ -800,7 +801,9 @@
       "name": "[variables('network_NIC_fg12_Name')]",
       "location": "[parameters('location')]",
       "dependsOn": [
-        "[parameters('vnetName')]"
+        "[parameters('vnetName')]",
+        "[variables('network_NIC_fg11_Name')]",
+        "[variables('NSGName')]"
       ],
       "properties": {
         "ipConfigurations": [
