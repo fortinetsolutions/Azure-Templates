@@ -20,7 +20,7 @@ This second diagram shows what will happen in the event FortiGate A is shut down
 
 ### FortiGate configuration:
 
-The FortiGates will be preconfigured similar to the following.  You should be able to connect via https on port 8443 (example: https://104.45.185.229:8443) or via SSH on port 22.  Use the management Public IP for each FortiGate to connect.
+The FortiGates will be *preconfigured* similar to the following.  You should be able to connect via https on port 8443 (example: https://104.45.185.229:8443) or via SSH on port 22.  Use the management Public IP for each FortiGate to connect.
 
     FortiGate-A:
     
@@ -152,7 +152,7 @@ Next, apply the license unless using PAYG licensing.  To apply BYOL licenses, fi
 
 Next, connect via HTTPS to both FortiGates via their management addresses and upload unique license files for each.
 
-Once, licensed and rebooted, you can proceed to configure the optional Azure settings to enable the cluster IP and/or route table failover.  With this particular architecture, configuring the following is most likely unnecessary.  However, in some scenarios, it may be useful to failover a public IP and/or route table in addition to using the load balancers.  The following is a sample configuration:
+Once, licensed and rebooted, you can proceed to configure the optional Azure settings to enable the cluster IP and/or route table failover.  With this particular architecture, configuring the following is most likely *unnecessary*.  However, in some scenarios, it may be useful to failover a public IP and/or route table in addition to using the load balancers.  The following is a sample configuration:
 
 For FortiGate A (Most of this config will be specific to your environment and so must be modified):
     
