@@ -258,7 +258,7 @@
     },
     "artifactsBaseUrl": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/fortinetclouddev/FortiGate-AP-HA/master",
+      "defaultValue": "https://raw.githubusercontent.com/fortinetsolutions/Azure-Templates/master/FortiGate/Active-Passive HA",
       "metadata": {
         "description": "Base URL of the solution template gallery package",
         "artifactsBaseUrl": ""
