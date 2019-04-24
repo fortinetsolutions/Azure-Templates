@@ -188,8 +188,6 @@
       },
       "location": "[parameters('location')]",
       "properties": {
-        "platformFaultDomainCount": "3",
-        "platformUpdateDomainCount": "5"
       },
       "sku": {
         "name":  "Aligned"
