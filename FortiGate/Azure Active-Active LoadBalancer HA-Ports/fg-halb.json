@@ -687,7 +687,7 @@
       "properties": {
         "ipConfigurations": [
           {
-            "name": "ipconfig1",
+            "name": "[concat(parameters('FortiGateNamePrefix'),'-A-front')]",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
@@ -732,7 +732,7 @@
       "properties": {
         "ipConfigurations": [
           {
-            "name": "ipconfig1",
+            "name": "[concat(parameters('FortiGateNamePrefix'),'-B-front')]",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
@@ -775,7 +775,7 @@
       "properties": {
         "ipConfigurations": [
           {
-            "name": "ipconfig1",
+            "name": "[concat(parameters('FortiGateNamePrefix'),'-A-back')]",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
@@ -808,7 +808,7 @@
       "properties": {
         "ipConfigurations": [
           {
-            "name": "ipconfig1",
+            "name": "[concat(parameters('FortiGateNamePrefix'),'-B-back')]",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "subnet": {
