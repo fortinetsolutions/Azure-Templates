@@ -90,6 +90,9 @@
           "provider": "[toUpper(parameters('FortinetTags').provider)]"
         },
         "location": "[parameters('location')]",
+	"sku": {
+          "name": "Standard"
+        },
         "dependsOn": [
           "[variables('publicIPID')]"
         ],
