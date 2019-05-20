@@ -101,15 +101,48 @@
         "description": "Resource group to which the Public IP belongs."
       }
     },
-    "publicIPAddressType": {
+    "publicIP1sku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard",
+        "Basic"
+      ],
+      "metadata": {
+        "description": "Standard public IPs are newer and required for new Azure load balancers"
+      }
+    },
+    "publicIP2sku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard",
+        "Basic"
+      ],
+      "metadata": {
+        "description": "Standard public IPs are newer and required for new Azure load balancers"
+      }
+    },
+    "publicIP1AllocationMethod": {
       "type": "string",
       "defaultValue": "Static",
       "allowedValues": [
-        "Dynamic",
-        "Static"
+        "Static",
+        "Dynamic"
       ],
       "metadata": {
-        "description": "Type of public IP address"
+        "description": "Dynamic public IPs change on reboot"
+      }
+    },
+    "publicIP2AllocationMethod": {
+      "type": "string",
+      "defaultValue": "Static",
+      "allowedValues": [
+        "Static",
+        "Dynamic"
+      ],
+      "metadata": {
+        "description": "Dynamic public IPs change on reboot"
       }
     },
     "vnetNewOrExisting": {
@@ -136,9 +169,9 @@
         "description": "Resource Group containing the virtual network - or new resource group from above (if new vnet)"
       }
     },
-    "vnetAddressPrefix": {
-      "type": "string",
-      "defaultValue": "10.0.0.0/16",
+    "vnetAddressPrefixes": {
+      "type": "array",
+      "defaultValue": ["10.0.0.0/16"],
       "metadata": {
         "description": "Virtual Network Address prefix"
       }
@@ -193,10 +226,9 @@
     },
     "artifactsBaseUrl": {
       "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/fortinetsolutions/Azure-Templates/master/FortiGate/Azure Active-Active LoadBalancer HA-Ports",
+      "defaultValue": "https://raw.githubusercontent.com/fortinetclouddev/FortiGate-HA-for-Azure/AAwLBsv6.0.4/",
       "metadata": {
-        "description": "Base URL of the solution template gallery package",
-        "artifactsBaseUrl": ""
+        "description": "Base URL of the solution template gallery package"
       }
     }
   },
@@ -204,9 +236,10 @@
     "compute_AvailabilitySet_FG_Name": "[concat(parameters('FortiGateNamePrefix'),'-AvailabilitySet')]",
     "compute_AvailabilitySet_FG_Id": "[resourceId('Microsoft.Compute/availabilitySets', variables('compute_AvailabilitySet_FG_Name'))]",
 
-    "vnetID": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks', parameters('vnetName'))]",
-    "subnet1Ref": "[concat(variables('vnetID'),'/subnets/', parameters('Subnet1Name'))]",
-    "subnet2Ref": "[concat(variables('vnetID'),'/subnets/', parameters('Subnet2Name'))]",
+    "vnetAddressPrefix": "[string(parameters('vnetAddressPrefixes')[0])]",
+    "subnet1Ref": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('Subnet1Name'))]",
+    "subnet2Ref": "[resourceId(parameters('vnetResourceGroup'),'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('Subnet2Name'))]",
+
 
     "vmName": "[concat(parameters('FortiGateNamePrefix'),'-A')]",
     "vm2Name": "[concat(parameters('FortiGateNamePrefix'),'-B')]",
@@ -265,7 +298,7 @@
     "network_LB_Public_NatRule_FGAdminPerm_fg2_Id": "[concat(variables('network_LB_Public_Id'),'/inboundNatRules/',variables('network_LB_Public_NatRule_FGAdminPerm_fg2_Name'))]",
     "network_LB_Public_NatRule_SSH_fg2_Name": "[concat(variables('VM2Name'),'SSH')]",
     "network_LB_Public_NatRule_SSH_fg2_Id": "[concat(variables('network_LB_Public_Id'),'/inboundNatRules/',variables('network_LB_Public_NatRule_SSH_fg2_Name'))]",
-    "network_LB_Public_Name": "[concat(parameters('FortiGateNamePrefix'),'publicLoadBalancer')]",
+    "network_LB_Public_Name": "[concat(parameters('FortiGateNamePrefix'),'-publicLoadBalancer')]",
     "network_LB_Public_Id": "[resourceId('Microsoft.Network/loadBalancers',variables('network_LB_Public_Name'))]",
     "network_LB_Public_FEName": "[concat(parameters('FortiGateNamePrefix'),'publicLBFE')]",
     "network_LB_Public_FEId": "[concat(variables('network_LB_Public_Id'),'/frontendIPConfigurations/',variables('network_LB_Public_FEName'))]",
@@ -274,7 +307,8 @@
     "network_LB_Public_BEName": "[concat(parameters('FortiGateNamePrefix'),'publicLBBE')]",
     "network_LB_Public_BEId": "[concat(variables('network_LB_Public_Id'),'/backendAddressPools/',variables('network_LB_Public_BEName'))]",
 
-    "updateIPURI": "[concat(parameters('artifactsBaseURL'),'/update-nic.json')]"
+    "updateIPURI": "[uri(parameters('artifactsBaseUrl'),'update-nic.json')]",
+    "updateIP2URI": "[uri(parameters('artifactsBaseUrl'),'update-nic2.json')]"
   },
   "resources": [
     {
@@ -309,14 +343,12 @@
     {
       "condition": "[equals(parameters('vnetNewOrExisting'), 'new')]",
       "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "name": "[parameters('vnetName')]",
       "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
-          "addressPrefixes": [
-            "[parameters('vnetAddressPrefix')]"
-          ]
+          "addressPrefixes": "[parameters('vnetAddressPrefixes')]"
         },
         "subnets": [
           {
@@ -343,7 +375,7 @@
     {
       "type": "Microsoft.Network/loadBalancers",
       "name": "[variables('internalLBName')]",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -396,7 +428,7 @@
           {
             "properties": {
               "protocol": "Tcp",
-              "port": 22,
+              "port": 8008,
               "intervalInSeconds": 5,
               "numberOfProbes": 2
             },
@@ -408,7 +440,7 @@
     {
       "type": "Microsoft.Network/routeTables",
       "name": "[variables('routeTable2Name')]",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "dependsOn": [
         "[variables('internalLBName')]"
       ],
@@ -435,7 +467,7 @@
       }
     },
     {
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -478,7 +510,7 @@
     {
       "condition": "[equals(parameters('publicIPNewOrExisting'), 'new')]",
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -486,16 +518,16 @@
       "location": "[parameters('location')]",
       "sku": 
       {
-        "name": "Standard"
+        "name": "[parameters('publicIP1sku')]"
       },
       "properties": {
-        "publicIPAllocationMethod": "[parameters('publicIPAddressType')]"
+        "publicIPAllocationMethod": "[parameters('publicIP1AllocationMethod')]"
       }
     },
     {
       "condition": "[equals(parameters('publicIP2NewOrExisting'), 'new')]",
       "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -503,16 +535,16 @@
       "location": "[parameters('location')]",
       "sku": 
       {
-        "name": "Standard"
+        "name": "[parameters('publicIP2sku')]"
       },
       "properties": {
-        "publicIPAllocationMethod": "[parameters('publicIPAddressType')]"
+        "publicIPAllocationMethod": "[parameters('publicIP2AllocationMethod')]"
       }
     },
     {
       "type": "Microsoft.Network/loadBalancers",
       "name": "[variables('network_LB_Public_Name')]",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -662,7 +694,7 @@
           {
             "properties": {
               "protocol": "Tcp",
-              "port": 22,
+              "port": 8008,
               "intervalInSeconds": 5,
               "numberOfProbes": 2
             },
@@ -672,7 +704,7 @@
       }
     },
     {
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -716,7 +748,7 @@
       }
     },
     {
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -761,7 +793,7 @@
       }
     },
     {
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -793,7 +825,7 @@
       }
     },
     {
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2018-02-01",
       "tags": {
        "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -828,7 +860,7 @@
     {
       "type": "Microsoft.Resources/deployments",
       "name": "UpdateNIC1",
-      "apiVersion": "2015-01-01",
+      "apiVersion": "2018-02-01",
       "dependsOn": [
         "[variables('network_NIC_fg11_Name')]"
       ],
@@ -860,6 +892,44 @@
                 "id": "[variables('network_LB_Public_NatRule_FGAdminPerm_fg1_Id')]"
               }
             ]
+          },
+          "FortinetTags": {
+            "value": "[parameters('FortinetTags')]"
+          },
+          "NSGName": {
+            "value": "[variables('NSGName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "name": "UpdateNIC1.2",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('network_NIC_fg12_Name')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updateIP2URI')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "nicName": {
+            "value": "[variables('network_NIC_fg12_Name')]"
+          },
+          "SubnetRef": {
+            "value": "[variables('subnet2Ref')]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg12_Name'))).ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "BEPool": {
+            "value": "[variables('internalLB_BE2Id')]"
           },
           "FortinetTags": {
             "value": "[parameters('FortinetTags')]"
@@ -922,6 +992,44 @@
       }
     },
     {
+      "type": "Microsoft.Resources/deployments",
+      "name": "UpdateNIC2.2",
+      "apiVersion": "2015-01-01",
+      "dependsOn": [
+        "[variables('network_NIC_fg22_Name')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('updateIP2URI')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "nicName": {
+            "value": "[variables('network_NIC_fg22_Name')]"
+          },
+          "SubnetRef": {
+            "value": "[variables('subnet2Ref')]"
+          },
+          "privateIp": {
+            "value": "[reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg22_Name'))).ipConfigurations[0].properties.privateIPAddress]"
+          },
+          "BEPool": {
+            "value": "[variables('internalLB_BE2Id')]"
+          },
+          "FortinetTags": {
+            "value": "[parameters('FortinetTags')]"
+          },
+          "NSGName": {
+            "value": "[variables('NSGName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      }
+    },
+    {
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[variables('compute_VM_fg1_Name')]",
       "apiVersion": "2017-03-30",
@@ -949,7 +1057,7 @@
           "computerName": "[variables('compute_VM_fg1_Name')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]",
-          "customData": "[base64(concat('config system global\n set admin-sport 8443\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', parameters('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg11_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg12_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n  set allowaccess ping ssh\n next\n end'))]"
+          "customData": "[base64(concat('config system probe-response\n set mode http-probe\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', variables('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg11_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n append allowaccess probe-response\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg12_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n  set allowaccess ping probe-response\n next\n end\n config sys admin\n edit admin\n set password ', parameters('adminPassword'), '\n next\n end\n config sys auto-scale\n set stat enable\n set role master\n set sync-int port2\n set psksecret ', parameters('adminPassword'), '\n end\n'))]"
         },
         "storageProfile": {
           "imageReference": {
@@ -1015,7 +1123,7 @@
           "computerName": "[variables('compute_VM_fg2_Name')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPassword')]",
-          "customData": "[base64(concat('config system global\n set admin-sport 8443\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', parameters('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg21_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg22_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n set allowaccess ping ssh\n next\n end'))]"
+          "customData": "[base64(concat('config system probe-response\n set mode http-probe\n end\n config router static\n edit 1\n set gateway ', variables('sn1GatewayIP'), '\n set device port1\n next\n edit 2\n set dst ', variables('vnetAddressPrefix'), '\n set gateway ', variables('sn2GatewayIP'), '\n set device port2\n next\n edit 3\nset dst 168.63.129.16 255.255.255.255\nset device port2\n set gateway ', variables ('sn2GatewayIP'), '\n next\nedit 4\nset dst 168.63.129.16 255.255.255.255\nset device port1\n set gateway ', variables ('sn1GatewayIP'), '\n next\n end\n config system interface\n edit port1\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg21_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn1CIDRmask'), '\n set description external\n append allowaccess probe-response\n next\n edit port2\n set mode static\n set ip ', reference(concat('Microsoft.Network/networkInterfaces/', variables('network_NIC_fg22_Name'))).ipConfigurations[0].properties.privateIPAddress, '/', variables('sn2CIDRmask'), '\n set description internal\n set allowaccess ping probe-response\n next\n end\n config sys admin\n edit admin\n set password ', parameters('adminPassword'), '\n next\n end\n config sys auto-scale\n set status enable\n set master-ip ', reference(concat('Microsoft.Network/networkInterfaces/',variables('network_NIC_fg12_Name'))).ipConfigurations[0].properties.privateIPAddress, ' \n set psksecret ',  parameters('adminPassword'), '\n end\n'))]"
         },
         "storageProfile": {
           "imageReference": {
