@@ -214,8 +214,11 @@ For FortiGate B:
       end
     end
 
+A note about public IPs and the Azure load balancer:  This template only applies a single frontend and public IP to the load balancer.  If multiple public IPs are required, they can be added to additional Frontends on the public load balancer.  However, once, there are multiples, the load balancer will have indeterminate outbound NAT (meaning a connection may be sourced from any of the public IPs).  This will cause problems with Site-to-Site VPN tunnels.  In order to force outbound NAT to use a desired public IP, you would need to setup outbound rules.  Azure documentation for this is available here:
+
+https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-rules-overview
 
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffortinetsolutions%2FAzure-Templates%2Fmaster%2FFortiGate%2FActive-Passive-HA-w-Azure-LBs%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffortinetclouddev%2FFortiGate-AP-HA%2FE-Y_PrivateOffer_AP-HA_w_LBs%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
