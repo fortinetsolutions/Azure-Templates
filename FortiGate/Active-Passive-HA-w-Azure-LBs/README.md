@@ -219,6 +219,6 @@ A note about public IPs and the Azure load balancer:  This template only applies
 https://docs.microsoft.com/en-us/azure/load-balancer/load-balancer-outbound-rules-overview
 
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffortinetsolutions%2FAzure-Templates%2Fmaster%2FFortiGate%2FActive-Passive-HA-w-Azure-LBs/azuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffortinetsolutions%2FAzure-Templates%2Fmaster%2FFortiGate%2FActive-Passive-HA-w-Azure-LBs%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
