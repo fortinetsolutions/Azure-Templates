@@ -1,0 +1,299 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "wlNetworkSettings": {
+            "type": "object"
+        },
+        "apiVersions": {
+            "type": "object"
+        },
+        "workloadsSettings": {
+            "type": "object"
+        },
+        "adminUsername":{
+            "type": "string"
+        }
+    },
+    "variables": {
+        "rgName": "[resourceGroup().name]",
+        "vnetRef": "[resourceId(variables('rgName'), 'Microsoft.Network/virtualNetworks', parameters('wlNetworkSettings').virtualNetworkName)]",
+        "subnetid1": "[concat(variables('vnetRef'),'/subnets/',parameters('wlNetworkSettings').subnetName1)]",
+        "subnetid2":"[concat(variables('vnetRef'),'/subnets/',parameters('wlNetworkSettings').subnetName2)]"
+    },
+    "resources": [
+        {
+            "name": "[parameters('workloadsSettings').networkSecurityGroupName]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "[parameters('apiVersions').networkApiVersion]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "HTTP",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 300,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "SSH",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 320,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Port_8080",
+                        "properties": {
+                            "provisioningState": "Succeeded",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8080",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 330,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Port_8888",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8888",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 340,
+                            "direction": "Inbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    },
+                    {
+                        "name": "Port_8888_outbound",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "8888",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 330,
+                            "direction": "outbound",
+                            "sourcePortRanges": [],
+                            "destinationPortRanges": [],
+                            "sourceAddressPrefixes": [],
+                            "destinationAddressPrefixes": []
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "[parameters('apiVersions').networkApiVersion]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(parameters('workloadsSettings').nicName1)]",
+            "location": "[resourceGroup().location]",  
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('workloadsSettings').networkSecurityGroupName)]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ifconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnetId1')]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('workloadsSettings').networkSecurityGroupName)]"
+                }
+            }
+        }, 
+        {
+            "apiVersion": "[parameters('apiVersions').networkApiVersion]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(parameters('workloadsSettings').nicName2)]",
+            "location": "[resourceGroup().location]",  
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('workloadsSettings').networkSecurityGroupName)]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ifconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('subnetId2')]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('workloadsSettings').networkSecurityGroupName)]"
+                }
+            }
+        },
+        {
+            "apiVersion": "[parameters('apiVersions').computeApiVersion]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(parameters('workloadsSettings').virtualMachineName1)]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "web"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('workloadsSettings').nicName1))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('workloadsSettings').vmSize]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('workloadsSettings').virtualMachineName1)]",
+                    "adminUsername": "[parameters('workloadsSettings').adminUsername]",
+                    "adminPassword": "[parameters('workloadsSettings').adminPassword]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[parameters('workloadsSettings').osPublisher]",
+                        "offer": "[parameters('workloadsSettings').osOffer]",
+                        "sku": "[parameters('workloadsSettings').osSku]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[parameters('workloadsSettings').osDiskName1]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        }
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('workloadsSettings').nicName1))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "apiVersion": "[parameters('apiVersions').computeApiVersion]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(parameters('workloadsSettings').virtualMachineName2)]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "app"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('workloadsSettings').nicName2))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('workloadsSettings').vmSize]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('workloadsSettings').virtualMachineName2)]",
+                    "adminUsername": "[parameters('workloadsSettings').adminUsername]",
+                    "adminPassword": "[parameters('workloadsSettings').adminPassword]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[parameters('workloadsSettings').osPublisher]",
+                        "offer": "[parameters('workloadsSettings').osOffer]",
+                        "sku": "[parameters('workloadsSettings').osSku]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "name": "[parameters('workloadsSettings').osDiskName2]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS"
+                        }
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('workloadsSettings').nicName2))]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('workloadsSettings').virtualMachineName1,'/Extensions')]",
+            "location": "[parameters('workloadsSettings').location]",
+            "apiVersion": "2017-03-30",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/',parameters('workloadsSettings').virtualMachineName1)]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "[parameters('workloadsSettings').fileUri]"
+                    ],
+                    "commandToExecute": "[concat('sh fg-automate.sh',' ',parameters('adminUsername'))]"
+                }
+            }
+        }     
+    ],
+    "outputs": {
+        "WorkloadVMPrivateIPAddress1":{
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', parameters('workloadsSettings').nicName1)).ipConfigurations[0].properties.privateIPAddress]"
+        },
+        "WorkloadVMPrivateIPAddress2":{
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', parameters('workloadsSettings').nicName2)).ipConfigurations[0].properties.privateIPAddress]"
+        }
+    }
+}

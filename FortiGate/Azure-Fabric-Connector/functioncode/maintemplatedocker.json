@@ -1,0 +1,149 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appServicePlanName" : {
+            "type": "String"
+        },
+        "functionAppName" : {
+            "type" : "String"
+        },
+        "appInsightsName" : {
+            "type" : "String"
+        },
+        "storageName": {
+            "type": "String"
+        }
+    },
+    "variables" : {
+        "storageAccountsApiVersion" : "2018-07-01",
+        "WebHostingApiVersion" : "2016-03-01",
+        "WebSitesApiVersion" : "2016-03-01",
+        "appInsightsApiVersion" : "2015-05-01",
+        "storageAccountType" : "Standard_LRS",
+        "storageAccountKind" : "StorageV2",
+        "appServicePlanSku" : "Basic",
+        "appServicePlanSkuCode" : "B1",
+        "workerSize" : "0",
+        "workerSizeId" : "0",
+        "numberOfWorkers" : "1",
+        "hostingEnvironment" : "",
+        "WebHostingkind" : "linux",
+        "WebSiteskind" : "functionapp",
+        "appInsightskind" : "web",
+        "applicationType" : "web",
+        "reserved" : "true",
+        "functionWorkerRuntime" : "python",
+        "webSiteNodeDefaultVersion" : "10.14.1",
+        "functionExtensionVersion" : "~2",
+        "linuxFxVerison" : "DOCKER|vivek225/dockerhttptrigger:v4.0.0",
+        "appServiceStroage" : "false",
+        "dockerRegistryURL" : "registry.hub.docker.com",
+        "dockerRegistryUser" : "vivek225",
+        "dockerRegistryPassword" : "v!vek@225"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "[variables('storageAccountsApiVersion')]",
+            "name": "[parameters('storageName')]",
+            "location": "[resourceGroup().location]",
+            "kind" : "[variables('storageAccountKind')]",
+            "sku": {
+                        "name": "[variables('storageAccountType')]"
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "[variables('WebHostingApiVersion')]",
+            "name": "[parameters('appServicePlanName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "Tier": "[variables('appServicePlanSku')]",
+                "Name": "[variables('appServicePlanSkuCode')]"
+            },
+            "kind": "[variables('WebHostingkind')]",
+            "properties": {
+                "name": "[parameters('appServicePlanName')]",
+                "workerSize": "[variables('workerSize')]",
+                "workerSizeId": "[variables('workerSizeId')]",
+                "numberOfWorkers": "[variables('numberOfWorkers')]",
+                "reserved": "[variables('reserved')]",
+                "hostingEnvironment": "[variables('hostingEnvironment')]"
+            }
+        },
+        {
+            "apiVersion": "[variables('appInsightsApiVersion')]",
+            "name": "[parameters('appInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "kind": "[variables('appInsightskind')]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('functionAppName'))]" : "Resource"
+            },
+            "properties": {
+                "Application_Type": "[variables('applicationType')]",
+                "ApplicationId": "[parameters('functionAppName')]"
+            }
+        },
+        {
+            "apiVersion": "[variables('WebSitesApiVersion')]",
+            "type": "Microsoft.Web/sites",
+            "name": "[parameters('functionAppName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "[variables('WebSiteskind')]",
+            "dependsOn": [
+                            "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                            "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageName'))]"
+                        ],
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                "siteConfig": {
+                "appSettings": [
+                    {
+                        "name": "AzureWebJobsStorage",
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
+                    },
+                    {
+                        "name": "FUNCTIONS_WORKER_RUNTIME",
+                        "value": "[variables('functionWorkerRuntime')]"
+                    },
+                    {
+                        "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                        "value": "[variables('webSiteNodeDefaultVersion')]"
+                    },
+                    {
+                        "name": "FUNCTIONS_EXTENSION_VERSION",
+                        "value": "[variables('functionExtensionVersion')]"
+                    },
+                    {
+                        "name": "DOCKER_REGISTRY_SERVER_URL",
+                        "value": "[variables('dockerRegistryURL')]"
+                    },
+                    {
+                        "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+                        "value": "[variables('dockerRegistryUser')]"
+                    },
+                    {
+                        "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+                        "value": "[variables('dockerRegistryPassword')]"
+                    },
+                    {
+                        "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                        "value": "[variables('appServiceStroage')]"
+                    },
+                    {
+                        "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                        "value": "[reference(resourceId('microsoft.insights/components/', parameters('appInsightsName')), variables('appInsightsApiVersion')).InstrumentationKey]"
+                    },
+                    {
+                        "name": "RG",
+                        "value": "[resourceGroup().name]"
+                    }
+            ],
+                    "linuxFxVersion": "[variables('linuxFxVerison')]"
+        }
+    }
+}
+    ]
+}

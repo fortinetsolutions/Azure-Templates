@@ -1,0 +1,596 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "hubFotigateVnetCIDR":{
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "description":"provide the CIDR for FortiGate VNet(Hub VNet)"
+            }
+        },
+        "fortiGatePublicFacingSubnetCIDR":{
+            "type": "string",
+            "defaultValue": "10.0.0.0/24",
+            "metadata": {
+                "description":"provide the CIDR for FortiGate public facing subnet"
+            }
+        },
+        "fortiGateInsideSubnetCIDR":{
+            "type": "string",
+            "defaultValue": "10.0.1.0/24",
+            "metadata": {
+                "description":"provide the CIDR for FortiGate internal/private facing subnet"
+            }
+        },
+        "fortiGatePublicFacingSubnetAddress":{
+            "type": "string",
+            "defaultValue": "10.0.0.4",
+            "metadata": {
+                "description":"provide the static address of public facing subnet"
+            }
+        },
+        "fortiGateInsideSubnetAddress":{
+            "type": "string",
+            "defaultValue": "10.0.1.4",
+            "metadata": {
+                "description":"provide the statis address of internal/private facing subnet"
+            }
+        },
+        "fortiGateVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_F1",
+            "allowedValues": [
+                "Standard_F1",
+                "Standard_F16s",
+                "Standard_F1s",
+                "Standard_F2",
+                "Standard_F2s",
+                "Standard_F4",
+                "Standard_F4s",
+                "Standard_F8",
+                "Standard_F8s"
+            ],
+            "metadata": {
+                "description": "FortiGate virtual machine size(if you select any size other than the default size the cost will be more)"
+            }
+        },
+        "adminUserName": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "username for FortiGate virtual machine, make a note of the username this will be used further"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description": "password for FortiGate virtual machine,make a note of the password this will be used further."
+            }
+        },
+        "clientID":{
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description":"provide application ID of the service principal,which is used to automate the Azure Fabric Connector creation"
+            }
+        },
+        "clientSecret":{
+            "type": "securestring",
+            "defaultValue": "",
+            "metadata": {
+                "description":"provide password of the service principal,which is used to automate the Azure Fabric Connector creation"
+            }
+        },
+        "fabricConnectorWorkloadAddressName":{
+            "type": "string",
+            "defaultValue": "testip",
+            "metadata": {
+                "description":"provide the name of the fabric connector address"
+            }
+        },
+        "fabricConnectorFirewallAddressName":{
+            "type": "string",
+            "defaultValue": "firewallip",
+            "metadata": {
+                "description":"provide the name of the FortiGate fabric connector firewall address"
+            }
+        },
+        "existingSpokeVnet":{
+            "type": "string",
+            "defaultValue": "",
+            "allowedValues": [
+                "Yes",
+                "No"
+            ],
+            "metadata": {
+                "description": "This parameter will allow user to choose existing VNet or Create new VNet based on the values YES/NO.Note: You need to select the existing resource group while deploying the template if you choose Yes for Existing Vnet"
+            }
+        },
+        "existingVnetName":{
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description":"if you choose existingSpokeVnet as Yes, then provide the name of the existing VNet.Otherwise keep the default value as it is"
+            }
+        },
+        "existingSubnetName":{
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description":"if you choose existingSpokeVnet as Yes, then provide the name of the eisting Subnet.Otherwise keep the default value as it is"
+            }
+        },
+        "existingSubnetPrefix":{
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description":"if you choose existingSpokeVnet as Yes, then provide the address prefix of the existing subnet.Otherwise keep the default value as it is"
+            }
+        },  
+        "spokeDemoVnetCIDR":{
+            "type": "string",
+            "defaultValue": "172.1.0.0/16",
+            "metadata": {
+                "description":"provide the CIDR for demo VNet(spoke)"
+            }
+        },
+        "spokeDemoSubnetCIDR1":{
+            "type": "string",
+            "defaultValue": "172.1.0.0/24",
+            "metadata": {
+                "description":"provide the CIDR for demo subnet1(spoke1)"
+            }
+        },
+        "spokeDemoSubnetCIDR2":{
+            "type": "string",
+            "defaultValue": "172.1.1.0/24",
+            "metadata": {
+                "description":"provide the CIDR for demo subnet2(spoke2)"
+            }
+        }
+    },
+    "variables": {
+        "apiVersions": {
+            "deploymentApiVersion": "2016-02-01",
+            "computeApiVersion": "2018-06-01",
+            "networkApiVersion": "2017-09-01",
+            "routtableApiVersion": "2015-06-15"
+        },
+        "networkSettings": {
+            "location": "[variables('location')]",
+            "networkApiVersion": "2016-03-30",
+            "virtualNetworkName": "[concat('ForiGateVNET',variables('suffix'))]",
+            "addressPrefix": "[parameters('hubFotigateVnetCIDR')]",
+            "subnet1Name": "[concat('PublicFacingSubnet',variables('suffix'))]",
+            "subnet1Prefix": "[parameters('fortiGatePublicFacingSubnetCIDR')]",
+            "subnet2Name": "[concat('InternalSubnet',variables('suffix'))]",
+            "subnet2Prefix": "[parameters('fortiGateInsideSubnetCIDR')]"
+        },
+        "wlNetworkSettings": {
+            "location": "[variables('location')]",
+            "networkApiVersion": "2016-03-30",
+            "virtualNetworkName": "[concat('workLoadsVNET',variables('suffix'))]",
+            "addressPrefix": "[parameters('spokeDemoVnetCIDR')]",
+            "subnetName1": "[concat('wlSubnet1',variables('suffix'))]",
+            "subnetName2": "[concat('wlSubnet2',variables('suffix'))]",
+            "subnetPrefix1": "[parameters('spokeDemoSubnetCIDR1')]",
+            "subnetPrefix2": "[parameters('spokeDemoSubnetCIDR2')]"
+        },
+        "fortigateFirewallSettings": {
+            "location": "[variables('location')]",
+            "fortiAvailName": "[concat('forti-avset',variables('suffix'))]",
+            "FGPubFacingAddress": "[parameters('fortiGatePublicFacingSubnetAddress')]",
+            "FGDMZAddress": "[parameters('fortiGateInsideSubnetAddress')]",
+            "fortiPublicIPAddressName": "[concat('forti-pip',variables('suffix'))]",
+            "publicIPAddressType": "Dynamic",
+            "FortiGateName": "[concat('fortigateVM',variables('suffix'))]",
+            "fortiNicName1": "[concat('forti-nic-1',variables('suffix'))]",
+            "fortiNicName2": "[concat('forti-nic-2',variables('suffix'))]",
+            "sku": "fortinet_fg-vm_payg",
+            "version": "6.0.4",
+            "product": "fortinet_fortigate-vm_v5",
+            "publisher": "fortinet",
+            "fortigateVMSize": "[parameters('fortiGateVMSize')]",
+            "storageAccountType": "Standard_LRS",
+            "adminUsername": "[parameters('adminUserName')]",
+            "adminPassword": "[parameters('adminPassword')]",
+            "fortiDnsLabelPrefix": "[concat('fortigate',variables('suffix'))]",
+            "routeTable1Name": "[concat('FortiGate', '-', variables('networkSettings').subnet1Name,'-routes')]",
+            "routeTable2Name": "[concat('FortiGate', '-', variables('networkSettings').subnet2Name,'-routes')]",
+            "networkSecurityGroupName":"[concat('FortiGatensg',variables('suffix'))]",
+            "userData": "[concat('config system sdn-connector \n edit \"fg-azure-sdn\" \n set status enable \n set type azure \n set tenant-id \"',subscription().tenantId,'\" \n set subscription-id \"',subscription().subscriptionId,'\" \n set client-id \"',parameters('clientID'),'\" \n set client-secret \"',parameters('clientSecret'),'\" \n set resource-group \"', variables('rgName'),'\" \n set azure-region global \n set update-interval 60 \n end \n config firewall address \n edit \"',parameters('fabricConnectorWorkloadAddressName'),'\" \n set type dynamic \n set comment ','',' \n set visibility enable \n set associated-interface ','', '\n set color 0 \n set sdn azure \n set filter \"tag.displayName=web\" \n next \n end \n config firewall address \n edit \"',parameters('fabricConnectorFirewallAddressName'),'\" \n set type dynamic \n set comment ','',' \n set visibility enable \n set associated-interface ','', '\n set color 0 \n set sdn azure \n set filter \"tag.displayName=firewall\" \n next \n end \n config firewall policy \n edit 0 \n set name \"outbound\" \n set srcintf \"port2\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set nat enable \n next \n end \n config firewall vip \n edit ssh-wl \n set extintf \"port1\" \n set extip \"',parameters('fortiGatePublicFacingSubnetAddress'),'\" \n set mappedip \"172.1.0.4\" \n set portforward enable \n set protocol tcp \n set extport 2222 \n set mappedport 22 \n end \n config firewall vip \n edit web-ip \n set extintf \"port1\" \n set extip \"',parameters('fortiGatePublicFacingSubnetAddress'),'\" \n set mappedip \"172.1.0.4\" \n set portforward enable \n set protocol tcp \n set extport 8888 \n set mappedport 8888 \n end \n config firewall policy \n edit 0 \n set name \"ssh-workload-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"ssh-wl\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"web-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"web-ip\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"internet-inbound-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall DoS-policy \n edit 0 \n set status disable \n set interface \"port1\" \n set srcaddr all \n set dstaddr \"',parameters('fabricConnectorFirewallAddressName'),'\" \n set service ALL \n config anomaly \n edit \"tcp_syn_flood\" \n set status enable \n set log enable \n set action block \n set threshold 300 \n next \n end \n end \n config firewall policy \n edit 0 \n set name \"blocking-url-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"',parameters('fabricConnectorWorkloadAddressName'),'\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic securityevents \n set webfilter-profile \"default\" \n set profile-protocol-options \"default\" \n set ssl-ssh-profile \"certificate-inspection\" \n set nat enable \n set status disable \n next \n end \n config system interface \n edit port2 \n set mode dhcp \n end')]"
+         },
+        "workloadsSettings": {
+            "location": "[variables('location')]",
+            "virtualMachineName1": "[concat('workloadVM-1',variables('suffix'))]",
+            "virtualMachineName2": "[concat('workloadVM-2',variables('suffix'))]",
+            "publicIPdnsPrefix": "[concat('workloadpip',variables('suffix'))]",
+            "adminUsername": "[variables('demoVmUserName')]",
+            "adminPassword": "[variables('demoVmPassword')]",
+            "nicName1": "[concat('wl-nic-1',variables('suffix'))]",
+            "nicName2": "[concat('wl-nic-2',variables('suffix'))]",
+            "networkSecurityGroupName": "[concat('workload-nsg',variables('suffix'))]",
+            "publicIpAddressName": "[concat('workload-pip',variables('suffix'))]",
+            "publicIpAddressType": "Static",
+            "vmSize": "Standard_DS1_v2",
+            "osPublisher": "Canonical",
+            "osOffer": "UbuntuServer",
+            "osSku": "16.04-LTS",
+            "storageAccountType": "Standard_LRS",
+            "routeTableName":"[concat('WorkloadRoute',variables('suffix'))]",
+            "tenantID":"[subscription().tenantId]",
+            "clientID":"[parameters('clientID')]",
+            "ClientSecret":"[parameters('clientSecret')]",
+            "subscriptionID":"[subscription().subscriptionId]",
+            "rgName":"[variables('rgName')]",
+            "fileUri":"[concat(variables('baseUrl'),'scripts/fg-automate.sh')]",
+            "osDiskName1":"[concat('wlOsDisk-1',variables('suffix'))]",
+            "osDiskName2":"[concat('wlOsDisk-2',variables('suffix'))]"
+        },
+        "EndUserVMSettings": {
+            "vnetName": "[concat('enduserVNET',variables('suffix'))]",
+            "subnetName": "[concat('endusersubnet',variables('suffix'))]",
+            "addressPrefix": "10.5.0.0/16",
+            "subnetPrefix": "10.5.1.0/24",
+            "pipName": "[concat('enduserpip',variables('suffix'))]",
+            "publicIPAddressType": "Dynamic",
+            "nsgName":"[concat('endusernsg',variables('suffix'))]",
+            "dnsLabelPrefix": "[concat('enduserdns',variables('suffix'))]",
+            "location": "[variables('location')]",
+            "nicName": "[concat('enduser-nic',variables('suffix'))]",
+            "VmName": "[concat('enduserVM',variables('suffix'))]",
+            "vmSize": "Standard_DS1_v2",
+            "Username": "[variables('enduserVmUserName')]",
+            "Password": "[variables('enduserVmPassword')]",
+            "imagePublisher": "Canonical",
+            "imageOffer": "UbuntuServer",
+            "ubuntuOSVersion": "16.04-LTS",
+            "fileUri":"[concat(variables('baseUrl'),'scripts/fg-routeenable.sh')]"
+        }, 
+        "AzureFunction":{  
+            "appServicePlanName":"[concat('appsvc',variables('suffix'))]",
+            "functionAppName":"[concat('functionassociate',variables('suffix'))]",
+            "functionAppName1":"[concat('functionworkload',variables('suffix'))]",
+            "storageName":"[concat('storageacc',variables('suffix'))]",
+            "appInsightsName":"[concat('fg-appinsights',variables('suffix'))]",
+            "storageAccountsApiVersion":"2018-07-01",
+            "WebHostingApiVersion":"2016-03-01",
+            "WebSitesApiVersion":"2016-03-01",
+            "appInsightsApiVersion":"2015-05-01",
+            "storageAccountType":"Standard_LRS",
+            "storageAccountKind":"StorageV2",
+            "appServicePlanSku":"Basic",
+            "appServicePlanSkuCode":"B1",
+            "workerSize":"0",
+            "workerSizeId":"0",
+            "numberOfWorkers":"1",
+            "hostingEnvironment":"",
+            "WebHostingkind":"linux",
+            "WebSiteskind":"functionapp",
+            "appInsightskind":"web",
+            "applicationType":"web",
+            "reserved":"true",
+            "functionWorkerRuntime":"python",
+            "webSiteNodeDefaultVersion":"10.14.1",
+            "functionExtensionVersion":"~2",
+            "linuxFxVersion":"DOCKER|vivek225/routeupdatehttptrigger:v5.0.0",
+            "linuxFxVersion1":"DOCKER|vivek225/workloadhttptrigger:v5.0.0",
+            "appServiceStroage":"false",
+            "dockerRegistryURL":"registry.hub.docker.com"
+         },        
+        "location": "[resourceGroup().location]",
+        "deploymentApiVersion": "2016-02-01",
+        "suffix": "[substring(uniqueString(resourceGroup().id), 0, 5)]",
+        "rgName":"[resourceGroup().name]",
+        "demoVmUserName":"demouser",
+        "enduserVmUserName":"enduser",
+        "demoVmPassword":"[concat('Demo@1',variables('suffix'))]",
+        "enduserVmPassword":"[concat('Endu@1',variables('suffix'))]",
+        "baseUrl": "https://raw.githubusercontent.com/sysgain/fortigate-azure/master/"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "vnetPeeringExisting",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'Yes')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/vnetpeering-existing.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },                 
+                    "fortigateFirewallSettings": {
+                        "value": "[variables('fortigateFirewallSettings')]"
+                    },
+                    "apiVersions": {
+                        "value": "[variables('apiVersions')]"
+                    },
+                    "workloadsSettings":{
+                        "value":"[variables('workloadsSettings')]"
+                    },
+                    "existingVNetName":{
+                        "value":"[parameters('existingVNetName')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "vnetPeeringNew",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/vnetpeering.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },                 
+                    "wlNetworkSettings": {
+                        "value": "[variables('wlNetworkSettings')]"
+                    },
+                    "fortigateFirewallSettings": {
+                        "value": "[variables('fortigateFirewallSettings')]"
+                    },
+                    "apiVersions": {
+                        "value": "[variables('apiVersions')]"
+                    },
+                    "workloadsSettings":{
+                        "value":"[variables('workloadsSettings')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "FortiGateVMExisting",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'Yes')]",
+            "dependsOn": [
+                "vnetpeeringExisting"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/fortigate.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "fortigateFirewallSettings": {
+                        "value": "[variables('fortigateFirewallSettings')]"
+                    },                 
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },                 
+                    "apiVersions": {
+                        "value": "[variables('apiVersions')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "FortiGateVMNew",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "dependsOn": [
+                "vnetpeeringNew"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/fortigate.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "fortigateFirewallSettings": {
+                        "value": "[variables('fortigateFirewallSettings')]"
+                    },                 
+                    "networkSettings": {
+                        "value": "[variables('networkSettings')]"
+                    },                 
+                    "apiVersions": {
+                        "value": "[variables('apiVersions')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "workloadVMNew",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "dependsOn": [
+                "vnetpeeringNew"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/workload.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "workloadsSettings": {
+                        "value": "[variables('workloadsSettings')]"
+                    },   
+                    "wlNetworkSettings": {
+                        "value": "[variables('wlNetworkSettings')]"
+                    },
+                    "apiVersions": {
+                        "value": "[variables('apiVersions')]"
+                    },
+                    "adminUsername":{
+                        "value": "[variables('demoVmUserName')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "functionAppNewroute",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "dependsOn": [
+                "workloadVMNew"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/functionapp-docker-route.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "AzureFunction":{
+                        "value":"[variables('AzureFunction')]"
+                    },
+                    "workloadsSettings": {
+                        "value": "[variables('workloadsSettings')]"
+                    },   
+                    "wlNetworkSettings": {
+                        "value": "[variables('wlNetworkSettings')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "functionAppworkload",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "dependsOn": [
+                "functionAppNewroute"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/functionapp-docker-workload.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "AzureFunction":{
+                        "value":"[variables('AzureFunction')]"
+                    },
+                    "workloadsSettings": {
+                        "value": "[variables('workloadsSettings')]"
+                    },   
+                    "wlNetworkSettings": {
+                        "value": "[variables('wlNetworkSettings')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "EndUserVMNew",
+            "apiVersion": "[variables('deploymentApiVersion')]",
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "dependsOn": [
+                "functionAppNewroute"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('baseUrl'),'nested/EnduserVM.json')]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "EndUserVMSettings":{
+                        "value":"[variables('EndUserVMSettings')]"
+                    },
+                    "demoVnetAssociateRouteUrl":{
+                        "value": "[concat('https://',variables('AzureFunction').functionAppName,'.azurewebsites.net/api/routeupdateHttpTrigger?name=update')]"
+                    }
+                }
+            }
+        } 
+    ],
+    "outputs": {
+        "FortiGateWebURL": { 
+            "condition": "[equals(parameters('existingSpokeVnet'),'Yes')]",
+            "type": "string",
+            "value": "[concat('https://',reference('FortiGateVMExisting').outputs.fortigateFQDN.value)]"
+        },
+        "FortiGate-WebURL": {
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "type": "string",
+            "value": "[concat('https://',reference('FortiGateVMNew').outputs.fortigateFQDN.value)]"
+        },
+        "FortiGateDns": { 
+            "condition": "[equals(parameters('existingSpokeVnet'),'Yes')]",
+            "type": "string",
+            "value": "[reference('FortiGateVMExisting').outputs.fortigateFQDN.value]"
+        },
+        "FortiGate-Dns": { 
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "type": "string",
+            "value": "[reference('FortiGateVMNew').outputs.fortigateFQDN.value]"
+        },
+        "FortiGateVMUserName": {
+            "type": "string",
+            "value": "[parameters('adminUserName')]"
+        },
+        "FortiGateVMPassword": {
+            "type": "string",
+            "value": "[parameters('adminPassword')]"
+        },
+        "WorkloadVM-UserName":{
+            "type": "string",
+            "value": "[variables('demoVmUserName')]"
+        },
+        "WorkloadVM-Password":{
+            "type": "string",
+            "value": "[variables('demoVmPassword')]"
+        },
+        "EndUserVMPublicDNS":{
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "type": "string",
+            "value": "[reference('EndUserVMNew').outputs.enduserFQDN.value]"
+        },
+        "EndUserVM-UserName":{
+            "type": "string",
+            "value": "[variables('enduserVmUserName')]"
+        },
+        "EndUserVM-Password":{
+            "type": "string",
+            "value": "[variables('enduserVmPassword')]"
+        },
+        "resourceGroupName":{
+            "type": "string",
+            "value": "[resourceGroup().name]"
+        },
+        "FortiGateNic-1-IPAddress":{
+            "type": "string",
+            "value": "[variables('fortigateFirewallSettings').FGPubFacingAddress]"
+        },
+        "WorkloadVMPrivateIPAddress1":{
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "type": "string",
+            "value": "[reference('workloadVMNew').outputs.WorkloadVMPrivateIPAddress1.value]"
+        },
+        "WorkloadVMPrivateIPAddress2":{
+            "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
+            "type": "string",
+            "value": "[reference('workloadVMNew').outputs.WorkloadVMPrivateIPAddress2.value]"
+        },
+         "DemoVnetAssociateRouteUrl":{
+             "condition":"[equals(parameters('existingSpokeVnet'),'No')]",
+             "type": "string",
+             "value": "[concat('https://',variables('AzureFunction').functionAppName,'.azurewebsites.net/api/routeupdateHttpTrigger?name=update')]"
+         },
+         "DemoVnetCleanupUrl":{
+            "condition":"[equals(parameters('existingSpokeVnet'),'No')]",
+            "type": "string",
+            "value": "[concat('https://',variables('AzureFunction').functionAppName1,'.azurewebsites.net/api/WorkloadHttpTrigger?name=demo')]"
+        }
+    }
+}

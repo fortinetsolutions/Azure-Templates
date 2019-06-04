@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "hubFotigateVnetCIDR":{            
+            "value": "10.0.0.0/16"           
+        },
+        "FortiGatePublicFacingSubnetCIDR":{
+            "value": "10.0.0.0/24"            
+        },
+        "FortiGateInsideSubnetCIDR":{
+            "value": "10.0.1.0/24"            
+        },
+        "FortiGatePublicFacingSubnetAddress":{
+            "value": "10.0.0.4"            
+        },
+        "FortiGateInsideSubnetAddress":{
+            "value": "10.0.1.4"            
+        },
+        "fortigateVMSize": { 
+            "value": "Standard_F1"           
+        },
+        "adminUserName": {
+            "value": "adminuser"
+        },
+        "adminPassword": {
+            "value": "Password@1234"
+        },
+        "clientID":{            
+            "value": "4567-xxxx-1234-xxxx-xxxx-7689"
+        },
+        "clientSecret":{
+            "value": "Xjygdysbcxxxxxxxxxxxxxxxxyudtsch"            
+        },
+        "fabricConnectorWorkloadAddressName":{ 
+            "value": "testip"            
+        },
+        "fabricConnectorFirewallAddressName":{
+            "value": "firewallip"            
+        },
+        "existingSpokeVnet":{            
+            "value": "No"
+        },
+        "existingVnetName":{
+            "value": "NA"
+        },
+        "existingSubnetName":{
+            "value": "NA"
+        },
+        "existingSubnetPrefix":{
+            "value": "NA"
+        }, 
+        "spokeDemoVnetCIDR":{            
+            "value": "172.1.0.0/16"
+        },
+        "spokeDemoSubnetCIDR1":{            
+            "value": "172.1.0.0/24"            
+        },
+        "spokeDemoSubnetCIDR2":{            
+          "value": "172.1.1.0/24"           
+        }
+    }
+}

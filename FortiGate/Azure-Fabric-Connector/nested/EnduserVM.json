@@ -1,0 +1,225 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "EndUserVMSettings": {
+            "type": "object"
+        },
+        "demoVnetAssociateRouteUrl":{
+            "type": "string"
+        }
+    },
+    "variables": {
+        "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', parameters('EndUserVMSettings').vnetName)]",
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('EndUserVMSettings').subnetName)]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('EndUserVMSettings').vnetName]",
+            "location": "[parameters('EndUserVMSettings').location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('EndUserVMSettings').addressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('EndUserVMSettings').subnetName]",
+                        "properties": {
+                            "addressPrefix": "[parameters('EndUserVMSettings').subnetPrefix]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[parameters('EndUserVMSettings').pipName]",
+            "location": "[parameters('EndUserVMSettings').location]",
+            "properties": {
+                "publicIPAllocationMethod": "[parameters('EndUserVMSettings').publicIPAddressType]",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('EndUserVMSettings').dnsLabelPrefix]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2017-04-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[parameters('EndUserVMSettings').nicName]",
+            "location": "[parameters('EndUserVMSettings').location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('EndUserVMSettings').pipName)]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('EndUserVMSettings').nsgName)]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',parameters('EndUserVMSettings').pipName)]"
+                            },
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('EndUserVMSettings').nsgName)]"
+                }
+            }
+        },
+        {
+            "name": "[parameters('EndUserVMSettings').nsgName]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2018-01-01",
+            "location": "[parameters('EndUserVMSettings').location]",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "allow-ssh",
+                        "properties": {
+                            "description": "Allow SSH",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "22",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow-http",
+                        "properties": {
+                            "description": "Allow http",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 101,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "allow-http1",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "443",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 102,
+                            "direction": "Outbound"
+                        }
+                    },
+                    {
+                        "name": "web-rule",
+                        "properties": {
+                            "description": "Allow WEB",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1001,
+                            "direction": "Inbound"
+                        }
+                    },
+                    {
+                        "name": "web-rule1",
+                        "properties": {
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "80",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1002,
+                            "direction": "Outbound"
+                        }
+                    }
+                   
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('EndUserVMSettings').VmName]",
+            "location": "[parameters('EndUserVMSettings').location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', parameters('EndUserVMSettings').nicName)]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('EndUserVMSettings').vmSize]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('EndUserVMSettings').VmName]",
+                    "adminUsername": "[parameters('EndUserVMSettings').Username]",
+                    "adminPassword": "[parameters('EndUserVMSettings').Password]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[parameters('EndUserVMSettings').imagePublisher]",
+                        "offer": "[parameters('EndUserVMSettings').imageOffer]",
+                        "sku": "[parameters('EndUserVMSettings').ubuntuOSVersion]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage"
+                    },
+                    "dataDisks": [
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces',parameters('EndUserVMSettings').nicName)]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('EndUserVMSettings').VmName,'/Extensions')]",
+            "location": "[parameters('EndUserVMSettings').location]",
+            "apiVersion": "2017-03-30",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/',parameters('EndUserVMSettings').VmName)]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Azure.Extensions",
+                "type": "CustomScript",
+                "typeHandlerVersion": "2.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "fileUris": [
+                        "[parameters('EndUserVMSettings').fileUri]"
+                    ],
+                    "commandToExecute": "[concat('sh fg-routeenable.sh',' ',parameters('demoVnetAssociateRouteUrl'))]"
+                }
+            }
+        }    
+    ],
+    "outputs": {
+        "enduserFQDN": {
+            "type": "string",
+            "value": "[reference(parameters('EndUserVMSettings').pipName).dnsSettings.fqdn]"
+        }
+    }
+}
