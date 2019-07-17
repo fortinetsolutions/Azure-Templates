@@ -54,7 +54,8 @@
             "location": "[parameters('EndUserVMSettings').location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses/', parameters('EndUserVMSettings').pipName)]",
-                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('EndUserVMSettings').nsgName)]"
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('EndUserVMSettings').nsgName)]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('EndUserVMSettings').vnetName)]"
             ],
             "properties": {
                 "ipConfigurations": [

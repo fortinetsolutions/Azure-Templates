@@ -37,6 +37,13 @@
                 "description":"provide the statis address of internal/private facing subnet"
             }
         },
+        "fortiGateInsideSubnetGatewayAddress":{
+            "type": "string",
+            "defaultValue": "10.0.1.1",
+            "metadata": {
+                "description":"Provide the Gateway address of the FortiGate private subnet"
+            }
+        },
         "fortiGateVMSize": {
             "type": "string",
             "defaultValue": "Standard_F1",
@@ -114,21 +121,14 @@
             "metadata": {
                 "description":"if you choose existingSpokeVnet as Yes, then provide the name of the existing VNet.Otherwise keep the default value as it is"
             }
-        },
-        "existingSubnetName":{
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description":"if you choose existingSpokeVnet as Yes, then provide the name of the eisting Subnet.Otherwise keep the default value as it is"
-            }
-        },
-        "existingSubnetPrefix":{
-            "type": "string",
-            "defaultValue": "",
-            "metadata": {
-                "description":"if you choose existingSpokeVnet as Yes, then provide the address prefix of the existing subnet.Otherwise keep the default value as it is"
-            }
         },  
+        "existingVnetPrefix":{
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description":"if you choose existingSpokeVnet as Yes, then provide the CIDR of the existing VNet.Otherwise keep the default value as it is"
+            }
+        }, 
         "spokeDemoVnetCIDR":{
             "type": "string",
             "defaultValue": "172.1.0.0/16",
@@ -176,8 +176,9 @@
             "subnetName1": "[concat('wlSubnet1',variables('suffix'))]",
             "subnetName2": "[concat('wlSubnet2',variables('suffix'))]",
             "subnetPrefix1": "[parameters('spokeDemoSubnetCIDR1')]",
-            "subnetPrefix2": "[parameters('spokeDemoSubnetCIDR2')]"
-        },
+            "subnetPrefix2": "[parameters('spokeDemoSubnetCIDR2')]",
+            "staticRouteAddress":"[split(parameters('spokeDemoVnetCIDR'),'/')]"
+         },
         "fortigateFirewallSettings": {
             "location": "[variables('location')]",
             "fortiAvailName": "[concat('forti-avset',variables('suffix'))]",
@@ -189,7 +190,7 @@
             "fortiNicName1": "[concat('forti-nic-1',variables('suffix'))]",
             "fortiNicName2": "[concat('forti-nic-2',variables('suffix'))]",
             "sku": "fortinet_fg-vm_payg",
-            "version": "6.0.4",
+            "version": "6.2.0",
             "product": "fortinet_fortigate-vm_v5",
             "publisher": "fortinet",
             "fortigateVMSize": "[parameters('fortiGateVMSize')]",
@@ -200,8 +201,8 @@
             "routeTable1Name": "[concat('FortiGate', '-', variables('networkSettings').subnet1Name,'-routes')]",
             "routeTable2Name": "[concat('FortiGate', '-', variables('networkSettings').subnet2Name,'-routes')]",
             "networkSecurityGroupName":"[concat('FortiGatensg',variables('suffix'))]",
-            "userData": "[concat('config system sdn-connector \n edit \"fg-azure-sdn\" \n set status enable \n set type azure \n set tenant-id \"',subscription().tenantId,'\" \n set subscription-id \"',subscription().subscriptionId,'\" \n set client-id \"',parameters('clientID'),'\" \n set client-secret \"',parameters('clientSecret'),'\" \n set resource-group \"', variables('rgName'),'\" \n set azure-region global \n set update-interval 60 \n end \n config firewall address \n edit \"',parameters('fabricConnectorWorkloadAddressName'),'\" \n set type dynamic \n set comment ','',' \n set visibility enable \n set associated-interface ','', '\n set color 0 \n set sdn azure \n set filter \"tag.displayName=web\" \n next \n end \n config firewall address \n edit \"',parameters('fabricConnectorFirewallAddressName'),'\" \n set type dynamic \n set comment ','',' \n set visibility enable \n set associated-interface ','', '\n set color 0 \n set sdn azure \n set filter \"tag.displayName=firewall\" \n next \n end \n config firewall policy \n edit 0 \n set name \"outbound\" \n set srcintf \"port2\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set nat enable \n next \n end \n config firewall vip \n edit ssh-wl \n set extintf \"port1\" \n set extip \"',parameters('fortiGatePublicFacingSubnetAddress'),'\" \n set mappedip \"172.1.0.4\" \n set portforward enable \n set protocol tcp \n set extport 2222 \n set mappedport 22 \n end \n config firewall vip \n edit web-ip \n set extintf \"port1\" \n set extip \"',parameters('fortiGatePublicFacingSubnetAddress'),'\" \n set mappedip \"172.1.0.4\" \n set portforward enable \n set protocol tcp \n set extport 8888 \n set mappedport 8888 \n end \n config firewall policy \n edit 0 \n set name \"ssh-workload-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"ssh-wl\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"web-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"web-ip\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"internet-inbound-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall DoS-policy \n edit 0 \n set status disable \n set interface \"port1\" \n set srcaddr all \n set dstaddr \"',parameters('fabricConnectorFirewallAddressName'),'\" \n set service ALL \n config anomaly \n edit \"tcp_syn_flood\" \n set status enable \n set log enable \n set action block \n set threshold 300 \n next \n end \n end \n config firewall policy \n edit 0 \n set name \"blocking-url-policy\" \n set srcintf \"port1\" \n set dstintf \"port1\" \n set srcaddr \"',parameters('fabricConnectorWorkloadAddressName'),'\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic securityevents \n set webfilter-profile \"default\" \n set profile-protocol-options \"default\" \n set ssl-ssh-profile \"certificate-inspection\" \n set nat enable \n set status disable \n next \n end \n config system interface \n edit port2 \n set mode dhcp \n end')]"
-         },
+            "userData": "[concat('config system sdn-connector \n edit \"fg-azure-sdn\" \n set status enable \n set type azure \n set tenant-id \"',subscription().tenantId,'\" \n set subscription-id \"',subscription().subscriptionId,'\" \n set client-id \"',parameters('clientID'),'\" \n set client-secret \"',parameters('clientSecret'),'\" \n set resource-group \"', variables('rgName'),'\" \n set azure-region global \n set update-interval 60 \n end \n config firewall address \n edit \"',parameters('fabricConnectorWorkloadAddressName'),'\" \n set type dynamic \n set comment ','',' \n set visibility enable \n set associated-interface ','', '\n set color 0 \n set sdn \"fg-azure-sdn\" \n set filter \"tag.displayName=web\" \n next \n end \n config firewall address \n edit \"',parameters('fabricConnectorFirewallAddressName'),'\" \n set type dynamic \n set comment ','',' \n set visibility enable \n set associated-interface ','', '\n set color 0 \n set sdn \"fg-azure-sdn\" \n set filter \"tag.displayName=firewall\" \n next \n end \n config firewall vip \n edit ssh-wl \n set extintf \"port1\" \n set extip \"',parameters('fortiGatePublicFacingSubnetAddress'),'\" \n set mappedip \"172.1.0.4\" \n set portforward enable \n set protocol tcp \n set extport 2222 \n set mappedport 22 \n end \n config firewall vip \n edit web-ip \n set extintf \"port1\" \n set extip \"',parameters('fortiGatePublicFacingSubnetAddress'),'\" \n set mappedip \"172.1.0.4\" \n set portforward enable \n set protocol tcp \n set extport 8888 \n set mappedport 8888 \n end \n config firewall policy \n edit 0 \n set name \"ssh-workload-policy\" \n set srcintf \"port1\" \n set dstintf \"port2\" \n set srcaddr \"all\" \n set dstaddr \"ssh-wl\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"web-policy\" \n set srcintf \"port1\" \n set dstintf \"port2\" \n set srcaddr \"all\" \n set dstaddr \"web-ip\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"internet-inbound-policy\" \n set srcintf \"port2\" \n set dstintf \"port1\" \n set srcaddr \"all\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic all \n set nat enable \n next \n end \n config firewall policy \n edit 0 \n set name \"blocking-url-policy\" \n set srcintf \"port2\" \n set dstintf \"port1\" \n set srcaddr \"',parameters('fabricConnectorWorkloadAddressName'),'\" \n set dstaddr \"all\" \n set action accept \n set schedule \"always\" \n set service \"ALL\" \n set logtraffic securityevents \n set webfilter-profile \"default\" \n set profile-protocol-options \"default\" \n set ssl-ssh-profile \"certificate-inspection\" \n set nat enable \n set inspection-mode proxy \n set status disable \n next \n end \n config system interface \n edit port2 \n set mode dhcp \n end \n config router static \n edit 1 \n set dst ',variables('staticRoute'),'\n set gateway ',parameters('fortiGateInsideSubnetGatewayAddress'),'\n set distance 10 \n set device port2 \n end')]"
+          },
         "workloadsSettings": {
             "location": "[variables('location')]",
             "virtualMachineName1": "[concat('workloadVM-1',variables('suffix'))]",
@@ -286,8 +287,9 @@
         "rgName":"[resourceGroup().name]",
         "demoVmUserName":"demouser",
         "enduserVmUserName":"enduser",
-        "demoVmPassword":"[concat('Demo@1',variables('suffix'))]",
-        "enduserVmPassword":"[concat('Endu@1',variables('suffix'))]",
+        "demoVmPassword":"[concat('Demo@123',variables('suffix'))]",
+        "enduserVmPassword":"[concat('Endu@123',variables('suffix'))]",
+        "staticRoute":"[concat(variables('wlNetworkSettings').staticRouteAddress[0],'/255.255.0.0')]",
         "baseUrl": "https://raw.githubusercontent.com/sysgain/fortigate-azure/master/"
     },
     "resources": [
@@ -317,6 +319,9 @@
                     },
                     "existingVNetName":{
                         "value":"[parameters('existingVNetName')]"
+                    },
+                    "existingVnetPrefix":{
+                        "value":"[parameters('existingVnetPrefix')]"
                     }
                 }
             }
@@ -495,7 +500,7 @@
             "apiVersion": "[variables('deploymentApiVersion')]",
             "condition": "[equals(parameters('existingSpokeVnet'),'No')]",
             "dependsOn": [
-                "functionAppNewroute"
+                "functionAppworkload"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -582,11 +587,6 @@
             "type": "string",
             "value": "[reference('workloadVMNew').outputs.WorkloadVMPrivateIPAddress2.value]"
         },
-         "DemoVnetAssociateRouteUrl":{
-             "condition":"[equals(parameters('existingSpokeVnet'),'No')]",
-             "type": "string",
-             "value": "[concat('https://',variables('AzureFunction').functionAppName,'.azurewebsites.net/api/routeupdateHttpTrigger?name=update')]"
-         },
          "DemoVnetCleanupUrl":{
             "condition":"[equals(parameters('existingSpokeVnet'),'No')]",
             "type": "string",
@@ -594,3 +594,4 @@
         }
     }
 }
+

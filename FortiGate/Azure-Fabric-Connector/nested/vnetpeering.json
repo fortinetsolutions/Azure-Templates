@@ -20,8 +20,7 @@
     },
     "variables": {
         "routeTable1Id": "[resourceId('Microsoft.Network/routeTables',parameters('fortigateFirewallSettings').routeTable1Name)]",
-        "routeTable2Id": "[resourceId('Microsoft.Network/routeTables',parameters('fortigateFirewallSettings').routeTable2Name)]",
-        "routeTableWLID": "[resourceId('Microsoft.Network/routeTables',parameters('workloadsSettings').routeTableName)]"
+        "routeTable2Id": "[resourceId('Microsoft.Network/routeTables',parameters('fortigateFirewallSettings').routeTable2Name)]"
        },
     "resources": [
         {
@@ -32,11 +31,17 @@
             "properties": {
                 "routes": [
                     {
-                        "name": "[concat('to', '-', parameters('networkSettings').subnet2Name)]",
+                        "name": "[concat('to', '-', 'Internet')]",
                         "properties": {
-                            "addressPrefix": "[parameters('networkSettings').subnet2Prefix]",
-                            "nextHopType": "VirtualAppliance",
-                            "nextHopIpAddress": "[parameters('fortigateFirewallSettings').FGPubFacingAddress]"
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "Internet"
+                        }
+                    },
+                    {
+                        "name": "[concat('to','-','VNetLocal')]",
+                        "properties":{
+                            "addressPrefix": "[parameters('networkSettings').addressPrefix]",
+                            "nextHopType": "VnetLocal"
                         }
                     }
                 ]
@@ -50,11 +55,10 @@
             "properties": {
                 "routes": [
                     {
-                        "name": "[concat('to', '-', parameters('networkSettings').subnet1Name)]",
-                        "properties": {
-                            "addressPrefix": "[parameters('networkSettings').subnet1Prefix]",
-                            "nextHopType": "VirtualAppliance",
-                            "nextHopIpAddress": "[parameters('fortigateFirewallSettings').FGDMZAddress]"
+                        "name": "[concat('to','-','VNetLocal')]",
+                        "properties":{
+                            "addressPrefix": "[parameters('networkSettings').addressPrefix]",
+                            "nextHopType": "VnetLocal"
                         }
                     },
                     {
@@ -80,7 +84,14 @@
                         "properties": {
                             "addressPrefix": "0.0.0.0/0",
                             "nextHopType": "VirtualAppliance",
-                            "nextHopIpAddress": "[parameters('fortigateFirewallSettings').FGPubFacingAddress]"
+                            "nextHopIpAddress": "[parameters('fortigateFirewallSettings').FGDMZAddress]"
+                        }
+                    },
+                    {
+                        "name": "[concat('to','-', 'VNetLocal')]",
+                        "properties":{
+                            "addressPrefix": "[parameters('wlNetworkSettings').addressPrefix]",
+                            "nextHopType": "VnetLocal"
                         }
                     }
                 ]

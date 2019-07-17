@@ -17,6 +17,9 @@
         "FortiGateInsideSubnetAddress":{
             "value": "10.0.1.4"            
         },
+        "fortiGateInsideSubnetGatewayAddress":{
+            "value": "10.0.1.1"
+        },
         "fortigateVMSize": { 
             "value": "Standard_F1"           
         },
@@ -44,10 +47,7 @@
         "existingVnetName":{
             "value": "NA"
         },
-        "existingSubnetName":{
-            "value": "NA"
-        },
-        "existingSubnetPrefix":{
+        "existingVnetPrefix":{
             "value": "NA"
         }, 
         "spokeDemoVnetCIDR":{            
