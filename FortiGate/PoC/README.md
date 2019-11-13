@@ -12,7 +12,7 @@ Diagram:
 
 ---
 
-To login to the FortiGate, use https or ssh and connect to publicIP1. The FortiGate has DNAT configurations to forward RDP using the same public IP to the Windows Server.  Additionally, SSH and HTTP are forwarded, using the secondary public IP, to the Linux Server.  There is a static route on the FortiGate to send all internal VNET traffic through port2.  Review the VIP and Policy configuration and compare with the settings on the Azure resources.  Notice the Azure User defined route table.  This will provide a good overview of how FortiGates participate in routing and forwarding traffic within the Azure VNET. 
+To login to the FortiGate, use https or ssh and connect to publicIP1.  The default username for all three VMs is LocalAdmin.  During deployment you can change this.  The password is also chosen during deployment.  The FortiGate has DNAT configurations to forward RDP using the same public IP to the Windows Server.  Additionally, SSH and HTTP are forwarded, using the secondary public IP, to the Linux Server.  There is a static route on the FortiGate to send all internal VNET traffic through port2.  Review the VIP and Policy configuration and compare with the settings on the Azure resources.  Notice the Azure User defined route table.  This will provide a good overview of how FortiGates participate in routing and forwarding traffic within the Azure VNET. 
 
 For TCP or UDP ports that are not already used, you can create additional Virtual IPs and forward to other internal servers.  Alternatively, you can create another ipconfig on the FortiGate primary VNIC in Azure and associate a new public IP.  This will allow you to use the same protocols on standard ports again.
 
