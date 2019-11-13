@@ -1,8 +1,8 @@
 ## This template set is designed for Azure PoC.  The following are created:
-	- vnet with six subnets
-	- Two public IPs. Both are attached to the FortiGate primary (WAN) VNIC
-	- Partially configured FortiGate Virtual Appliance
-  - Windows Server
+  - vnet with six subnets
+  - Two public IPs. Both are attached to the FortiGate primary (WAN) VNIC
+  - Pre-configured FortiGate Virtual Appliance
+  - Windows Server 
   - Linux Server
 
 Diagram:
