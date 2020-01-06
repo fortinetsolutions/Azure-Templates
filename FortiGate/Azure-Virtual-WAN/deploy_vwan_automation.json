@@ -1,0 +1,240 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.7",
+    "parameters": {
+        "FunctionAppName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Function App that will be created."
+            }
+        },
+        "StorageAccountType": {
+            "type": "string",
+            "defaultValue": "Standard_LRS",
+            "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS"
+            ],
+            "metadata": {
+                "description": "Storage Account Type."
+            }
+        },
+        "RemoteSitesURL":{
+           "type": "string",
+            "metadata": {
+                "description": "URL of the blob storage where the remote sites file is stored"
+            }},
+        "RemoteSitesURL_connectionstring":{
+            "type": "string",
+                "metadata": {
+                    "description": "Conenction string for the storage account"
+                }},
+        "TenantID": {
+            "type": "string",
+            "metadata": {
+                "description": "Your Azure Directory ID."
+            }
+        },
+        "SubscriptionID": {
+            "type": "string",
+            "metadata": {
+                "description": "Your Azure Subscription ID."
+            }
+        },
+        "RestAppID": {
+            "type": "string",
+            "metadata": {
+                "description": "Application ID for the Registered app. This is under Azure Active Directory > App registrations > {your app}."
+            }
+        },
+        "RestAppSecret": {
+            "type": "string",
+            "metadata": {
+                "description": "Password for the Registered app."
+            }
+        },
+        "vwanName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the virtual WAN."
+            }
+        },
+        "vWANResourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the resource group that the Scale Set and its components will be deployed in."
+            }
+        },
+        "ScriptTimeout": {
+            "type": "string",
+            "defaultValue": "230",
+            "metadata": {
+                "description": "Timeout value (in seconds) for the Azure function script. The default value is 230."
+            }
+        },
+        "PackageResURL": {
+            "type": "string",
+            "defaultValue": "https://fortigatevwanfinal.blob.core.windows.net/fortiosvwan/vwan_auto_final.zip",
+            "metadata": {
+                "description": "The public URL of the deployment package zip file that contains the resource used to deploy the Function App. This URL must be accessible by Azure."
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "functionAppName": "[parameters('FunctionAppName')]",
+        "appInsightsName": "[parameters('FunctionAppName')]",
+        "storageAccountName": "[concat(uniquestring(resourceGroup().id), 'vwanhub')]",
+
+        "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "apiVersion": "2016-12-01",
+            "location": "[variables('location')]",
+            "kind": "Storage",
+            "sku": {
+                "name": "[parameters('StorageAccountType')]"
+            },
+            "resources": [{
+                    "name": "default/vpnsites",
+                    "type": "blobServices/containers",
+                    "apiVersion": "2018-03-01-preview",
+                    "dependsOn": [
+                        "[variables('storageAccountName')]"
+                    ]
+                }
+            ]
+            
+        },
+        {
+            "apiVersion": "2015-05-01",
+            "name": "[variables('appInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "kind": "web",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('functionAppName'))]": "Resource"
+            },
+            "properties": {
+                "Application_Type": "web",
+                "ApplicationId": "[variables('functionAppName')]"
+            }
+        },
+        {
+            "apiVersion": "2015-08-01",
+            "type": "Microsoft.Web/sites",
+            "name": "[variables('functionAppName')]",
+            "kind": "functionapp,linux",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "reserved": true,
+                "siteConfig": {
+                    "appSettings": [{
+                            "name": "AzureWebJobsDashboard",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[toLower(variables('functionAppName'))]"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "8.11.1"
+                        },
+                        {
+                            "name": "location",
+                            "value": "[variables('location')]"
+                        },
+                        {
+                            "name": "RESOURCE_GROUP",
+                            "value": "[parameters('vwanResourceGroupName')]"
+                        },
+                        {
+                            "name": "REST_APP_ID",
+                            "value": "[parameters('RestAppID')]"
+                        },
+                        {
+                            "name": "REST_APP_SECRET",
+                            "value": "[parameters('RestAppSecret')]"
+                        },
+                        {
+                            "name": "TENANT_ID",
+                            "value": "[parameters('TenantID')]"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "python"
+                        },
+                        {
+                            "name": "SCRIPT_TIMEOUT",
+                            "value": "[parameters('ScriptTimeout')]"
+                        },
+                        {
+                            "name": "RSG_HUB",
+                            "value": "[parameters('vwanResourceGroupName')]"
+                        },
+                        {
+                            "name": "vWAN_NAME",
+                            "value": "[parameters('vwanName')]"
+                        },
+                        {
+                            "name": "AZURE_STORAGE_ACCOUNT",
+                            "value": "[variables('storageAccountName')]"
+                        },
+                        {
+                            "name": "AZURE_STORAGE_ACCESS_KEY",
+                            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2016-12-01').keys[0].value]"
+                        },
+                        {
+                            "name": "SUBSCRIPTION_ID",
+                            "value": "[parameters('SubscriptionID')]"
+                        },
+                        {
+                            "name": "RemoteSitesURL",
+                            "value": "[parameters('RemoteSitesURL')]"
+                        },
+                        {
+                            "name": "DEBUG_SAVE_CUSTOM_LOG",
+                            "value": "true"
+                        },
+                        {
+                            "name": "MyStorageConnectionString",
+                            "value": "[parameters('RemoteSitesURL_connectionstring')]"
+                        },
+                        {
+                            "name": "WEBSITE_RUN_FROM_PACKAGE",
+                            "value": "[parameters('PackageResURL')]"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('microsoft.insights/components/', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
+                        },
+                        {
+                            "name": "DEBUG_LOGGER_OUTPUT_QUEUE_ENABLED",
+                            "value": "true"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
