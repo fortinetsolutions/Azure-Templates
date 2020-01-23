@@ -154,11 +154,12 @@ Next, connect via HTTPS to both FortiGates via their management addresses and up
 
 Once, licensed and rebooted, you can proceed to configure the Azure settings to enable the cluster IP and route table failover:
 
-For FortiGate A (Most of this config will be specific to your environment and so must be modified):
+For FortiGate A (Most of this config will be specific to your environment and so must be modified - note the public-ip parameter is the Azure resource name, but the next-hop for routes in UDRs is the actual IP of the local internal port):
     
     config system sdn-connector
       edit "AZConnector"
       set type azure
+      set ha-status enable
       set tenant-id "942e801f-1c18-237a-8fa1-4e2bde2161ba"
       set subscription-id "2g95c73c-dg16-47a1-1536-65124d1a5e11"
       set resource-group "fortigateapha"
@@ -189,6 +190,7 @@ For FortiGate B:
     config system sdn-connector
       edit "AZConnector"
       set type azure
+      set ha-status enable
       set tenant-id "942e801f-1c18-237a-8fa1-4e2bde2161ba"
       set subscription-id "2g95c73c-dg16-47a1-1536-65124d1a5e11"
       set resource-group "fortigateapha"
