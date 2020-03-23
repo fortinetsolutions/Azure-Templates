@@ -46,7 +46,7 @@
         "latest"
       ],
       "metadata": {
-        "description": "Only 6.0.0 has the A/P HA feature currently"
+        "description": "Image version"
       }
     },
     "instanceType": {
