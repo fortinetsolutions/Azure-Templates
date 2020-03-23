@@ -41,8 +41,8 @@
       "type": "string",
       "defaultValue": "latest",
       "allowedValues": [
-        "6.0.2",
-        "6.0.3",
+        "6.0.7",
+        "6.2.2",
         "latest"
       ],
       "metadata": {
