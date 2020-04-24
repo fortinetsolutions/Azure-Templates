@@ -25,11 +25,6 @@
             "metadata": {
                 "description": "URL of the blob storage where the remote sites file is stored"
             }},
-        "RemoteSitesURL_connectionstring":{
-            "type": "string",
-                "metadata": {
-                    "description": "Conenction string for the storage account"
-                }},
         "TenantID": {
             "type": "string",
             "metadata": {
@@ -218,7 +213,7 @@
                         },
                         {
                             "name": "MyStorageConnectionString",
-                            "value": "[parameters('RemoteSitesURL_connectionstring')]"
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
                         },
                         {
                             "name": "WEBSITE_RUN_FROM_PACKAGE",
