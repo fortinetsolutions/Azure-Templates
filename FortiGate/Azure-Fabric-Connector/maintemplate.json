@@ -290,7 +290,7 @@
         "demoVmPassword":"[concat('Demo@123',variables('suffix'))]",
         "enduserVmPassword":"[concat('Endu@123',variables('suffix'))]",
         "staticRoute":"[concat(variables('wlNetworkSettings').staticRouteAddress[0],'/255.255.0.0')]",
-        "baseUrl": "https://raw.githubusercontent.com/sysgain/fortigate-azure/master/"
+        "baseUrl": "https://raw.githubusercontent.com/fortinetsolutions/Azure-Templates/master/FortiGate/Azure-Fabric-Connector/"
     },
     "resources": [
          {
