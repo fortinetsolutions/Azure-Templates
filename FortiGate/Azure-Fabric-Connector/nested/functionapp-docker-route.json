@@ -89,7 +89,7 @@
                    },
                    {  
                       "name":"DOCKER_REGISTRY_SERVER_URL",
-                      "value":"[parameters('AzureFunction').dockerRegistryURL]"
+                      "value":"registry.hub.docker.com"
                    },
                    {  
                       "name":"WEBSITES_ENABLE_APP_SERVICE_STORAGE",
