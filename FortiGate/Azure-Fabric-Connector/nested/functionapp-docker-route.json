@@ -144,7 +144,7 @@
                       "value":"[reference(resourceId('microsoft.insights/components/', parameters('AzureFunction').appInsightsName), parameters('AzureFunction').appInsightsApiVersion).InstrumentationKey]"
                    }
                 ],
-                "linuxFxVersion":"[parameters('AzureFunction').linuxFxVersion]"
+                "linuxFxVersion":"DOCKER|vivek225/routeupdatehttptrigger:v5.0.0"
              }
           }
        }
