@@ -30,9 +30,6 @@
           "type":"Microsoft.Insights/components",
           "kind":"[parameters('AzureFunction').appInsightskind]",
           "location":"[resourceGroup().location]",
-          "tags":{  
-             "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('AzureFunction').functionAppName)]":"Resource"
-          },
           "properties":{  
              "Application_Type":"[parameters('AzureFunction').applicationType]",
              "ApplicationId":"[parameters('AzureFunction').functionAppName]"
