@@ -42,7 +42,7 @@
                    },
                    {  
                       "name":"DOCKER_REGISTRY_SERVER_URL",
-                      "value":"[parameters('AzureFunction').dockerRegistryURL]"
+                      "value":"registry.hub.docker.com"
                    },
                    {  
                       "name":"WEBSITES_ENABLE_APP_SERVICE_STORAGE",
@@ -113,7 +113,7 @@
                       "value":"[reference(resourceId('microsoft.insights/components/', parameters('AzureFunction').appInsightsName), parameters('AzureFunction').appInsightsApiVersion).InstrumentationKey]"
                    }
                 ],
-                "linuxFxVersion":"[parameters('AzureFunction').linuxFxVersion1]" 
+                "linuxFxVersion":"DOCKER|vivek225/workloadhttptrigger:v5.0.0" 
              }
           }
        }
