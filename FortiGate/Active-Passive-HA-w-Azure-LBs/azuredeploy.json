@@ -307,6 +307,8 @@
     "network_LB_Public_FEId": "[concat(variables('network_LB_Public_Id'),'/frontendIPConfigurations/',variables('network_LB_Public_FEName'))]",
     "network_LB_Public_BEName": "[concat(parameters('FortiGateNamePrefix'),'publicLBBE')]",
     "network_LB_Public_BEId": "[concat(variables('network_LB_Public_Id'),'/backendAddressPools/',variables('network_LB_Public_BEName'))]",
+    "network_LB_Public_Outbound": "[concat('plb-',parameters('FortiGateNamePrefix'),'-obrule')]",
+    "network_LB_Public_OutboundID": "[concat(variables('network_LB_Public_Id'),'/outboundRules/',variables('network_LB_Public_Outbound'))]",
 
     "publicIPID": "[resourceID(parameters('publicIPAddressResourceGroup'),'Microsoft.Network/publicIPAddresses',parameters('publicIPAddressName'))]",
     "publicIP2ID": "[resourceID(parameters('publicIPAddress2ResourceGroup'),'Microsoft.Network/publicIPAddresses',parameters('publicIPAddress2Name'))]",
@@ -620,7 +622,7 @@
     {
       "type": "Microsoft.Network/loadBalancers",
       "name": "[variables('network_LB_Public_Name')]",
-      "apiVersion": "2017-09-01",
+      "apiVersion": "2020-05-01",
       "tags": {
         "provider": "[toUpper(parameters('FortinetTags').provider)]"
       },
@@ -661,10 +663,12 @@
                 "id": "[concat(resourceId('Microsoft.Network/loadBalancers', variables('network_LB_Public_Name')), '/probes/lbprobe')]"
               },
               "protocol": "Tcp",
+              "enableTcpReset": true,
               "frontendPort": 80,
               "backendPort": 80,
               "enableFloatingIP": true,
-              "idleTimeoutInMinutes": 15
+              "idleTimeoutInMinutes": 15,
+              "disableOutboundSnat": true
             },
             "name": "PublicLBRule-FE1-http"
           },
@@ -683,7 +687,8 @@
               "frontendPort": 500,
               "backendPort": 500,
               "enableFloatingIP": false,
-              "idleTimeoutInMinutes": 15
+              "idleTimeoutInMinutes": 15,
+              "disableOutboundSnat": true
             },
             "name": "PublicLBRule-FE1-udp500"
           },
@@ -702,12 +707,33 @@
               "frontendPort": 4500,
               "backendPort": 4500,
               "enableFloatingIP": false,
-              "idleTimeoutInMinutes": 15
+              "idleTimeoutInMinutes": 15,
+              "disableOutboundSnat": true
             },
             "name": "PublicLBRule-FE1-udp4500"
           }
         ],
         "inboundNatRules": [],
+        "outboundRules": [
+                    {
+                        "name": "[variables('network_LB_Public_Outbound')]",
+                        "id": "[variables('network_LB_Public_OutboundID')]",
+                        "properties": {
+                            "frontendIPConfigurations": [
+                                {
+                                    "id": "[variables('network_LB_Public_FEId')]"
+                                }
+                            ],
+                            "backendAddressPool": {
+                                "id": "[variables('network_LB_Public_BEId')]"
+                            },
+                            "protocol": "All",
+                            "allocatedOutboundPorts": 30000,
+                            "enableTcpReset": true,
+                            "idleTimeoutInMinutes": 4
+                        }
+                    }
+                ],
         "probes": [
           {
             "properties": {
