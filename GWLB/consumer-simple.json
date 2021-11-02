@@ -264,7 +264,7 @@
               },
               "privateIPAddressVersion": "IPv4",
               "gatewayLoadBalancer": {
-                "id": "[concat('/subscriptions/',parameters('subscription_id'), '/resourceGroups/', parameters('provider_rg'), '/providers/Microsoft.Network/loadBalancers/ProviderLB/frontendIPConfigurations/FEIpconfig1')]"
+                "id": "[concat('/subscriptions/',parameters('subscription_id'), '/resourceGroups/', parameters('provider_rg'), '/providers/Microsoft.Network/loadBalancers/GWLB/frontendIPConfigurations/FEIpconfig1')]"
               }
             }
           }
