@@ -9,7 +9,7 @@ This ARM template deploys a pair of FortiGate Next-Generation Firewall accompani
 
 ## Design
 
-As you can see in the diagram, the Gateway Load Balancer and associated backend pool will sit as a shim in between the Standard Load Balancer Frontend and Backend.  Thus all traffic in or out of the Standard Load balancer will be forwarded to the Gateway Load Balancer and inspected by a FortiGate.
+As you can see in the diagram, the Gateway Load Balancer and associated backend pool will sit as a shim in between the Standard Load Balancer Frontend and Backend.  Thus all traffic in or out of the Standard Load balancer will be forwarded to the Gateway Load Balancer and inspected by a FortiGate. The primary template here deploys the right side (Provider Side) of this diagram.  A sample consumer template is available here as well, but is not necessarily meant for production.
 
 ![FortiGate-VM azure design](images/gwlbdesign.png)
 
@@ -25,7 +25,7 @@ For the deployment, you can use the Azure Portal, Azure CLI, Powershell or Azure
 
 ## Requirements and limitations
 
-This template only deploys the Gateway Load Balancer and FortiGates.  It does not provide the consumer side of the deployment.  A typical use case may have a Managed Security Services Provider deploy the FortiGates in their subscription, and one of their customers deploy the consumer side of the solution in their subscription, using the subscription ID and Resource Group of the MSSP's deployment to link the two together.  A sample consumer template is also included.
+This template only deploys the Gateway Load Balancer and FortiGates (i.e. the provider section of the above diagram).  It does not provide the consumer side of the deployment.  A typical use case may have a Managed Security Services Provider deploy the FortiGates in their subscription, and one of their customers deploy the consumer side of the solution in their subscription, using the subscription ID and Resource Group of the MSSP's deployment to link the two together.  A sample consumer template is also included.
 
 The ARM template deploys different resources and it is required to have the access rights and quota in your Microsoft Azure subscription to deploy the resources.
 
