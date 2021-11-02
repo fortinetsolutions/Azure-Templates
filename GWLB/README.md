@@ -46,25 +46,25 @@ The ARM template deploys different resources and it is required to have the acce
 
 The FortiGate VMs need a specific configuration to match the deployed environment. The basic configuration is already setup through the UserData portion of the ARM template.  This includes VXLAN tunnels from each FortiGate to the Gateway Load Balancer.  These provide the external and internal interfaces which are configured as a virtual wire pair.  Thus, all communication between the Gateway Load Balancer and FortiGate occur at layer 2 within these tunnels.  The following shows the basic configuration which is already included in the template.  Notice that the policy allows all traffic, but does enable IPS and logging.  This can be modified and restricted as necessary.  The policy here is only an initial example which does allow traffic to flow.
 
-config system interface
-    edit "port1"
-        set vdom "root"
-        set mode dhcp
-        set allowaccess probe-response
-        set type physical
-        set description "Provider"
-        set snmp-index 1
-        set defaultgw disable
-        set mtu-override enable
-        set mtu 1570
-    next
-    ...
-    edit "extvxlan"
-        set vdom "root"
-        set type vxlan
-        set snmp-index 7
-        set interface "port1"
-    next
+`config system interface`
+    `edit "port1"`
+        `set vdom "root"`
+        `set mode dhcp`
+        `set allowaccess probe-response`
+        `set type physical`
+        `set description "Provider"`
+        `set snmp-index 1`
+        `set defaultgw disable`
+        `set mtu-override enable`
+        `set mtu 1570`
+    `next`
+    `...`
+    `edit "extvxlan"`
+        `set vdom "root"`
+        `set type vxlan`
+        `set snmp-index 7`
+        `set interface "port1"`
+    `next`
     edit "intvxlan"
         set vdom "root"
         set type vxlan
