@@ -58,7 +58,7 @@
     },
     "subscription_id": {
       "type": "string",
-      "defaultValue": "b851d0d9-9a10-4098-9269-35e85eb3a698"
+      "defaultValue": ""
     },
     "provider_rg": {
       "type": "string",
