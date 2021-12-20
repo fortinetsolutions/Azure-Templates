@@ -31,10 +31,10 @@ A best practice full deployment will look like the following diagram:
 ### In order to configure FortiGates:
 
     FortiGate-A:
-    Connect via https on TCP port 8443 to public IP1 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
+    Connect via https on TCP port 443 to public IP1 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
     Connect via SSH on port 22 to public IP1 to directly access the CLI
     FortiGate-B:
-    Connect via https on TCP port 8443 to public IP2 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
+    Connect via https on TCP port 443 to public IP2 or private IP if already connected to the vnet via ExpressRoute or Azure VPN (both of these IPs can be obtained from the portal)
     Connect via SSH on port 22 to public IP2 to directly access the CLI
 
 The Azure Load Balancer only has management ports configured in the NAT rules.  For highly available access through the FortiGates, it's recommended that you use additional frontends and public IPs with floating IP load balance rules (two samples are configured on port 80).  Then, you can configure Virtual IPs on the FortiGate to match the associated public IP.
